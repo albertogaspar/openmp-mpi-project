@@ -15,6 +15,7 @@ post* create_post(long ts, long post_id, long user_id, char* post, char* user)
     new_post->user = user;
     new_post->score = 10;
     new_post->is_active = true;
+    new_post->num_of_dec = 0;
 
     // Spawn a thread that decreses the score every 24 hours
     pthread_t tid;
