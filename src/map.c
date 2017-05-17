@@ -7,6 +7,9 @@ map_t map_init(){
 } 
 
 map_t map_put(map_t map, long key, void *value){
+	if( map_get(map, key)!=NULL ){
+		return map;
+	}
     node_t *new = (node_t*) malloc(sizeof(node_t));
     new->key = key;
     new->value = value;
@@ -14,9 +17,8 @@ map_t map_put(map_t map, long key, void *value){
     return new;
 }
 
-// Delete a comment
 map_t map_remove(map_t map, long key){
-    if (is_empty(map))
+    if (map_is_empty(map))
         return NULL;
     if(map->key == key){
         map_t temp = map->next;
@@ -28,7 +30,6 @@ map_t map_remove(map_t map, long key){
 
 }
 
-// Show comment
 void* map_get(map_t map, long key){
     while(map != NULL){
         if(map->key == key)
@@ -38,10 +39,19 @@ void* map_get(map_t map, long key){
     return NULL;
 }
 
-int is_empty(map_t map){
+int map_is_empty(map_t map){
     if (map == NULL)
         return 1;
     return 0;
+}
+
+int map_size(map_t map){
+	int size = 0;
+    while(map != NULL){
+    	size++;
+        map = map->next;
+    }
+    return size;
 }
 
 

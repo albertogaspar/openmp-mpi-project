@@ -23,6 +23,9 @@ map_t map_remove(map_t map, long key);
 void * map_get(map_t map, long key);
 
 //return 1 if empty 0 otherwise
-int is_empty(map_t map);
+int map_is_empty(map_t map);
+
+//return the size of the map
+int map_size(map_t map);
 
 #endif

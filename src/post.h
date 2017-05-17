@@ -1,5 +1,6 @@
 #ifndef POST_H
 #define POST_H
+#include "map.h"
 
 
 typedef struct post{
@@ -12,7 +13,8 @@ typedef struct post{
     bool is_active; // a post is considered no longer active as soon as its
                     // total score reaches zero, even if it receives additional
                     // comments in the future.
-	int num_of_dec; //number of time the score was decreased due to 24h elapsed
+	int num_of_dec; //number of times the score was decreased due to 24h elapsed
+	map_t commenters;
 }post;
 
 // Create a new post
@@ -23,5 +25,7 @@ void del_post(long post_id);
 void show_post(long post_id);
 //
 void update_score(int delta);
+//add commenter (only if new) to commenters
+void add_commenter_to_post(post* post, long user_id);
 
 #endif

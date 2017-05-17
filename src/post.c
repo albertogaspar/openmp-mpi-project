@@ -1,5 +1,6 @@
 #include "post.h"
 #include "utils.h"
+#include "map.h"
 
 // Create a new post
 post* create_post(long ts, long post_id, long user_id, char* post, char* user)
@@ -16,6 +17,7 @@ post* create_post(long ts, long post_id, long user_id, char* post, char* user)
     new_post->score = 10;
     new_post->is_active = true;
     new_post->num_of_dec = 0;
+    map_init( new_post->commenters);
 
     // Spawn a thread that decreses the score every 24 hours
     pthread_t tid;
@@ -43,4 +45,8 @@ void* decrease_score(post* post){
     }
     post->is_active = false;
     pthread_exit(NULL);
+}
+
+void add_commenter_to_post(post* post, long user_id){
+	map_put(post->commenters, user_id);
 }

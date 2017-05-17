@@ -1,13 +1,17 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "post.h"
 #include "comment.h"
-#include "utils.h"
+//#include "utils.h"
 
 #define LIST_MAX 10
 #define COMMENT_FILE "comments.dat"
 #define POSTS_FILE "posts.dat"
 #define SPLITTER "|"
+
+
+FILE* file;
 
 long int strtol_def(char* string, long int def)
 {
@@ -34,31 +38,50 @@ int parse_comment(struct comment* comment, char* line){
     return 0;
 }
 
-struct comment* next_post()
+struct comment* next_comment()
 {
     char line[500];
     // Allocation of space for new comment
     struct comment* new_comment;
     new_comment = (struct comment*) malloc(sizeof(struct comment));
     // Read one line of the file
-    line = fgets(str, 500, (FILE*) file);
+    fgets(line, 500, (FILE*) file);
     if (line == NULL || new_comment==NULL)
         return NULL;
-    parse_comment(new_comment, str);
+    parse_comment(new_comment, line);
     return new_comment;
 }
 
-/**
 int parse_post(struct post* post, char* line){
     post->ts = parse_ts(strsep(&line, SPLITTER));
-    post->post_id = strtol(strsep(&line, SPLITTER), NULL, 10);
-    post->user_id = strtol(strsep(&line, SPLITTER), NULL, 10);
-    post->post = strsep(&line, SPLITTER);
-    post->user = strsep(&line, SPLITTER);
+    post->post_id = strtol_def(strsep(&line, SPLITTER),-1);
+    post->user_id = strtol_def(strsep(&line, SPLITTER),-1);
+    char* p = strsep(&line, SPLITTER);
+    post->post = (char*) malloc(strlen(p)*sizeof(char));
+    strcpy(post->post, p);
+    char* us = strsep(&line, SPLITTER);
+    post->user = (char*) malloc(strlen(us)*sizeof(char));
+    strcpy(post->user, us);
     post->score = 10;
     post->is_active = true;
+    post->num_of_dec = 0;
+    map_init( post->commenters);
     return 0;
-}*/
+}
+
+struct comment* next_post()
+{
+    char line[500];
+    // Allocation of space for new comment
+    struct post* new_post;
+    new_post = (struct post*) malloc(sizeof(struct post));
+    // Read one line of the file
+    fgets(line, 500, (FILE*) file);
+    if (line == NULL || new_post==NULL)
+        return NULL;
+    parse_post(new_post, line);
+    return new_post;
+}
 
 int main(int argc, char *argv[])
 {
