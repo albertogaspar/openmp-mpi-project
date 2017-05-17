@@ -35,7 +35,7 @@ void out_insert_tuple(map_t list, out_tuple* tuple){
 }
 
 void out_print_tuple(long ts, map_t list ) {
-	printf("")
+	printf("");
 }
 
 
