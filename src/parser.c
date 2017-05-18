@@ -11,7 +11,42 @@
 #define SPLITTER "|"
 
 
-FILE* file;
+// res is the container for the date, array_size should be at least 32
+char* ts2date(long t, char* res, int array_size)
+{
+        const char *format = default_format;
+
+        struct tm lt;
+
+        localtime_r(&t, &lt);
+
+        if (strftime(res, array_size, format, &lt) == 0) {
+                (void) fprintf(stderr,  "strftime(3): cannot format supplied "
+                                        "date/time into buffer of size %u "
+                                        "using: '%s'\n",
+                                        array_size, format);
+                return NULL;
+        }
+
+        printf("%u -> '%s'\n", (unsigned) t, res);
+}
+
+time_t parse_ts(char* date)
+{
+    printf("%s\n", date);
+    char** tokens = str_split(date, '.');
+    struct tm mytm;
+    time_t t;
+
+    strptime(date,"%Y-%m-%dT%H:%M:%S",&mytm);
+    char* part2 = *(tokens + 1);
+    tokens = str_split(part2, '+');
+    t = mktime(&mytm);
+    t = t * 1000 + atoi(*(tokens+0));
+    printf("t=%ld\n",t);
+    return t;
+}
+
 
 long int strtol_def(char* string, long int def)
 {

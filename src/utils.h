@@ -1,10 +1,7 @@
 #ifndef UTILS_H
 #define UTILS_H
 
-// From (long) timestamp to (char) date formatted as MMM dd YYYY
-char* ts2date(long t, char* res, int array_size);
-
-time_t parse_ts(char* date);
+typedef enum { false, true } bool;
 
 /*
 The total score of an active post P is computed as the sum of its own score plus
