@@ -5,13 +5,6 @@
 #include "map_iterator.h"
 #include "post_manager.h"
 
-#define TAG 1
-
-typedef enum {
-    MASTER, POST_MANAGER, COMMENT_MANAGER, OUT_MANAGER
-} proc;
-
-
 int main(int argc, char* argv[]){
     int rank, size;
 

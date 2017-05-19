@@ -1,30 +1,10 @@
 #include "mpi.h"
+#include "utils.h"
+#include "out_manager.h"
 #include <stdio.h>
 #include <stdlib.h>
 
 #define NUM_OF_BEST 3
-
-typedef struct out_tuple{
-	long post_id;
-	long user_id;
-	int num_commenters;
-	int score;
-}out_tuple;
-
-typedef struct post_score{
-	long post_id;
-	int score;
-}post_score;
-
-typedef struct user_num{
-	long user_id;
-	int num_commenters;
-}user_num;
-
-
-extern const int POST_MANAGER;
-extern const int MASTER;
-extern const int TAG;
 
 /* output: <ts, top1_post_id, top1_post_user, top1_post_score, top1_post_commenters, top2_post_id,
  * top2_post_user, top2_post_score, top2_post_commenters, top3_post_id, top3_post_user,
@@ -87,14 +67,20 @@ void out_manager_run(){
 	int changed;
 
 	MPI_Recv(&current_ts, 1, MPI_LONG, MASTER, TAG, MPI_COMM_WORLD, &stat);
-
+	printf("recieved current_ts: %ld\n", current_ts);
+	
 	//stop when receive current_ts=-1
 	while(current_ts!=-1) {
 
+		//receiving post_id and score
 		MPI_Recv(&first_msg, 1, MPI_LONG_INT, POST_MANAGER, TAG, MPI_COMM_WORLD, &stat);
 		temp.post_id = first_msg.post_id;
 		temp.score = first_msg.score;
+		printf("received first_msg: post_id->%ld, score->%d\n", first_msg.post_id,first_msg.score);
+		//receiving user_id and num_commenters
 		MPI_Recv(&second_msg, 1, MPI_LONG_INT, POST_MANAGER, TAG, MPI_COMM_WORLD, &stat);
+		printf("received second_msg: user_id->%ld, num_commenters->%d\n", second_msg.user_id,second_msg.num_commenters);
+
 		temp.user_id = second_msg.user_id;
 		temp.num_commenters = second_msg.num_commenters;
 
@@ -108,11 +94,12 @@ void out_manager_run(){
 
 		//receive next ts
 		MPI_Recv(&current_ts, 1, MPI_LONG, MASTER, TAG, MPI_COMM_WORLD, &stat);
+		printf("recieved current_ts: %ld\n", current_ts);
 
 	}
 
 }
-
+/*
 int main(int argc, char *argv[]){
 	int i=0;
 	out_tuple best_posts[NUM_OF_BEST + 1];
@@ -131,7 +118,7 @@ int main(int argc, char *argv[]){
 		out_print_tuple(current_ts, best_posts);
 	}
 
-}
+}*/
 
 
 

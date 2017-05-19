@@ -1,7 +1,13 @@
 #ifndef UTILS_H
 #define UTILS_H
 
+#define TAG 1
+
 typedef enum { false, true } bool;
+
+typedef enum {
+    MASTER, POST_MANAGER, COMMENT_MANAGER, OUT_MANAGER
+} proc;
 
 /*
 The total score of an active post P is computed as the sum of its own score plus
