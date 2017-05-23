@@ -4,29 +4,28 @@
 #include "map.h"
 #include "map_iterator.h"
 #include "post_manager.h"
+#include "utils.h"
 
 int main(int argc, char* argv[]){
-    int rank, size;
+    proc rank;
+    int size;
 
     MPI_Init(&argc, &argv);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
-    if(rank == 0)
+    switch (rank)
     {
-        //  Master
-    }
-    else if (rank == 1)
-    {
-        
-        post_manager_run();
-
-    }
-    else if (rank == 2)
-    {
-        // Comment Mangaer
-    }
-    else{
-        // Output Manager
+        case MASTER: 
+            break;
+        case POST_MANAGER:
+            post_manager_run();
+            break;
+        case COMMENT_MANAGER:
+            break;
+        case OUT_MANAGER:
+            break;
+        default:
+            break;
     }
 
     MPI_Finalize();

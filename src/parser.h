@@ -5,12 +5,12 @@
 
 
 // From (long) timestamp to (char) date formatted as MMM dd YYYY
-char* ts2date(long t, char* res, int array_size);
+char* parser_ts2date(long t, char* res, int array_size);
 
-time_t parse_ts(char* date);
+time_t parser_parse_ts(char* date);
 
 //return new comment from file
-struct comment* next_comment();
+struct comment* parser_next_comment();
 
 //return new post from file
-struct comment* next_post();
+struct comment* parser_next_post();

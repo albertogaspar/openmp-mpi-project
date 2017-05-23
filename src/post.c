@@ -3,7 +3,7 @@
 #include "map.h"
 
 // Create a new post
-post* create_post(long ts, long post_id, long user_id, char* post, char* user)
+post* post_create(long ts, long post_id, long user_id, char* post, char* user)
 {
     post* new_post = (post*) malloc(sizeof(post));
     if (post==NULL){
@@ -25,28 +25,29 @@ post* create_post(long ts, long post_id, long user_id, char* post, char* user)
 }
 
 // Delete a post
-void del_post(post* post)
+void post_delete(post* post)
 {
     free(post);
 }
 
 // Print a post
-void show_post(post* post)
+void post_show(post* post)
 {
     char* date[32];
     ts2date(post->ts, date, sizeof(date));
     printf("%s posted %s on %l \n", post->user, post->post, date);
 }
 
-void* decrease_score(post* post){
-    while(post->score > 0){
-        sleep(60*60*24); // sleep for 24 hours
-        post->score -= 1;
+void post_update_score(post* p, int delta, bool daily_decrement){
+    p->score = p->score + delta;
+    if (daily_decrement){
+        p->num_of_dec = p->num_of_dec + delta;
     }
-    post->is_active = false;
-    pthread_exit(NULL);
+    if(p->score<=0) {
+        p->is_active = false;
+    }
 }
 
-void add_commenter_to_post(post* post, long user_id){
+void post_add_commenter(post* post, long user_id){
 	map_put(post->commenters, user_id);
 }

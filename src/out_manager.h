@@ -1,8 +1,10 @@
 #ifndef OUT_MANAGER_H
 #define OUT_MANAGER_H
 
+#include <time.h>
 
 typedef struct out_tuple{
+	time_t ts;
 	long post_id;
 	long user_id;
 	int num_commenters;

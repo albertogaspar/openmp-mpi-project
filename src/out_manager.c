@@ -3,6 +3,7 @@
 #include "out_manager.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include "serialization.h"
 
 #define NUM_OF_BEST 3
 
@@ -28,6 +29,7 @@ void copyTuple(out_tuple *dest, out_tuple *src){
 	dest->post_id = src->post_id;
 	dest->score = src->score;
 	dest->user_id = src->user_id;
+	dest->ts = src->ts; 
 }
 
 int sort_tuples(out_tuple* array, int n) {
@@ -44,6 +46,15 @@ int sort_tuples(out_tuple* array, int n) {
              copyTuple(&array[i+1], &tmp);
              changed = 1;
            }
+		   // If scores are equals check timestamps
+		   else if ((array[i].score == array[i+1].score) && (array[i].ts < array[i+1].ts))
+		   {
+			 copyTuple(&tmp , &array[i]);
+			 copyTuple(&array[i], &array[i+1]);
+			 copyTuple(&array[i+1], &tmp);
+			 changed = 1;
+		   }
+		   // TODO: if scores and timestamps are equals, rank based on the timestamps of their last received related comments
          }
      }
    return changed;
@@ -54,6 +65,7 @@ void out_manager_run(){
 	int i=0;
 	out_tuple best_posts[NUM_OF_BEST + 1];
 	for(i=0; i<NUM_OF_BEST + 1; i++) {
+		best_posts[i].ts = -1;
 		best_posts[i].post_id = -1;
 		best_posts[i].user_id = -1;
 		best_posts[i].num_commenters = -1;
@@ -68,21 +80,14 @@ void out_manager_run(){
 
 	MPI_Recv(&current_ts, 1, MPI_LONG, MASTER, TAG, MPI_COMM_WORLD, &stat);
 	printf("recieved current_ts: %ld\n", current_ts);
-	
+
 	//stop when receive current_ts=-1
 	while(current_ts!=-1) {
-
-		//receiving post_id and score
-		MPI_Recv(&first_msg, 1, MPI_LONG_INT, POST_MANAGER, TAG, MPI_COMM_WORLD, &stat);
-		temp.post_id = first_msg.post_id;
-		temp.score = first_msg.score;
-		printf("received first_msg: post_id->%ld, score->%d\n", first_msg.post_id,first_msg.score);
-		//receiving user_id and num_commenters
-		MPI_Recv(&second_msg, 1, MPI_LONG_INT, POST_MANAGER, TAG, MPI_COMM_WORLD, &stat);
-		printf("received second_msg: user_id->%ld, num_commenters->%d\n", second_msg.user_id,second_msg.num_commenters);
-
-		temp.user_id = second_msg.user_id;
-		temp.num_commenters = second_msg.num_commenters;
+		//receiving out tuple from post manager
+		MPI_Datatype MPI_out_tuple = serialize_out_tuple();
+		MPI_Recv(&temp, 1, MPI_out_tuple, POST_MANAGER, TAG, MPI_COMM_WORLD, &stat);
+   		printf("Received: user_id = %ld score = %d post_id = %ld num_commenters = %d \n",
+			temp.user_id, temp.score, temp.post_id, temp.num_commenters);
 
 		best_posts[NUM_OF_BEST] = temp;
 		changed = sort_tuples(best_posts, NUM_OF_BEST + 1);
@@ -119,6 +124,3 @@ int main(int argc, char *argv[]){
 	}
 
 }*/
-
-
-

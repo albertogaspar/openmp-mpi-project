@@ -12,7 +12,7 @@
 
 
 // res is the container for the date, array_size should be at least 32
-char* ts2date(long t, char* res, int array_size)
+char* parser_ts2date(long t, char* res, int array_size)
 {
         const char *format = default_format;
 
@@ -31,7 +31,7 @@ char* ts2date(long t, char* res, int array_size)
         printf("%u -> '%s'\n", (unsigned) t, res);
 }
 
-time_t parse_ts(char* date)
+time_t parser_parse_ts(char* date)
 {
     printf("%s\n", date);
     char** tokens = str_split(date, '.');
@@ -73,7 +73,7 @@ int parse_comment(struct comment* comment, char* line){
     return 0;
 }
 
-struct comment* next_comment()
+struct comment* parser_next_comment()
 {
     char line[500];
     // Allocation of space for new comment
@@ -104,7 +104,7 @@ int parse_post(struct post* post, char* line){
     return 0;
 }
 
-struct comment* next_post()
+struct comment* parser_next_post()
 {
     char line[500];
     // Allocation of space for new comment
