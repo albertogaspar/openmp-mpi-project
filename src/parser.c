@@ -87,34 +87,35 @@ struct comment* parser_next_comment()
     return new_comment;
 }
 
-int parse_post(struct post* post, char* line){
-    post->ts = parse_ts(strsep(&line, SPLITTER));
-    post->post_id = strtol_def(strsep(&line, SPLITTER),-1);
-    post->user_id = strtol_def(strsep(&line, SPLITTER),-1);
+post parse_post(char* line){
+    time_t ts = parse_ts(strsep(&line, SPLITTER));
+
+    long post_id = strtol_def(strsep(&line, SPLITTER),-1);
+
+    long user_id = strtol_def(strsep(&line, SPLITTER),-1);
+    
     char* p = strsep(&line, SPLITTER);
-    post->post = (char*) malloc(strlen(p)*sizeof(char));
-    strcpy(post->post, p);
+    char* content = (char*) malloc(strlen(p)*sizeof(char));
+    strcpy(content, p);
+
     char* us = strsep(&line, SPLITTER);
-    post->user = (char*) malloc(strlen(us)*sizeof(char));
-    strcpy(post->user, us);
-    post->score = 10;
-    post->is_active = true;
-    post->num_of_dec = 0;
-    map_init( post->commenters);
-    return 0;
+    char* user = (char*) malloc(strlen(us)*sizeof(char));
+    strcpy(user, us);
+
+    return post_create(ts, post_id, user_id, content, user);
 }
 
-struct comment* parser_next_post()
+struct post* parser_next_post()
 {
     char line[500];
     // Allocation of space for new comment
     struct post* new_post;
-    new_post = (struct post*) malloc(sizeof(struct post));
     // Read one line of the file
     fgets(line, 500, (FILE*) file);
     if (line == NULL || new_post==NULL)
         return NULL;
-    parse_post(new_post, line);
+    new_post = parse_post(line);
+
     return new_post;
 }
 

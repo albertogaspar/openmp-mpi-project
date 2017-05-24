@@ -19,6 +19,9 @@ map_t map_put(map_t map, long key, void *value);
 // remove the value having key as key from the map
 map_t map_remove(map_t map, long key);
 
+// remove all the elements in the map and return an empty map
+map_t map_empty(map_t map);
+
 // return the value of having key as key
 void * map_get(map_t map, long key);
 

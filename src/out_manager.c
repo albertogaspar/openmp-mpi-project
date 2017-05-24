@@ -83,14 +83,14 @@ void out_manager_run(){
 	long int current_ts;
 	int changed;
 
-	MPI_Recv(&current_ts, 1, MPI_LONG, MASTER, TAG, MPI_COMM_WORLD, &stat);
+	MPI_Recv(&current_ts, 1, MPI_LONG, MASTER, GENERIC_TAG, MPI_COMM_WORLD, &stat);
 	printf("received current_ts: %ld\n", current_ts);
 
 	//stop when receive current_ts=-1
 	while(current_ts!=-1) {
 		//receiving out tuple from post manager
 		MPI_Datatype MPI_out_tuple = serialize_out_tuple();
-		MPI_Recv(&temp, 1, MPI_out_tuple, POST_MANAGER, TAG, MPI_COMM_WORLD, &stat);
+		MPI_Recv(&temp, 1, MPI_out_tuple, POST_MANAGER, GENERIC_TAG, MPI_COMM_WORLD, &stat);
    		printf("Received: user_id = %ld score = %d post_id = %ld num_commenters = %d \n",
 			temp.user_id, temp.score, temp.post_id, temp.num_commenters);
 
@@ -103,11 +103,22 @@ void out_manager_run(){
 		}
 
 		//receive next ts
-		MPI_Recv(&current_ts, 1, MPI_LONG, MASTER, TAG, MPI_COMM_WORLD, &stat);
+		MPI_Recv(&current_ts, 1, MPI_LONG, MASTER, GENERIC_TAG, MPI_COMM_WORLD, &stat);
 		printf("received current_ts: %ld\n", current_ts);
 
 	}
 
+}
+
+out_tuple out_create_tuple(post *p){
+	out_tuple ot;
+
+	ot.ts = p->ts;
+	ot.comment_ts = p->last_comment_ts;
+	ot.post_id = p-> post_id;
+	ot.user_id = p-> user_id;
+	ot.num_commenters = map_size(p->commenters);
+	ot.score = p-> score;
 }
 /*
 int main(int argc, char *argv[]){

@@ -30,6 +30,16 @@ map_t map_remove(map_t map, long key){
 
 }
 
+map_t map_empty(map_t map){
+    void* it = map_it_init(map);
+    while(map_it_has_next(map, it)){
+        long key = map_it_next(map, &it);
+        map = map_remove(map, key);
+    }
+    return map;
+}
+
+
 void* map_get(map_t map, long key){
     while(map != NULL){
         if(map->key == key)
@@ -67,10 +77,9 @@ int map_it_hasnext(map_t map, void* state){
     return 1;
 }
 
-void* map_it_next(map_t map, void** state_pointer){
+long map_it_next(map_t map, void** state_pointer){
     node_t* state = (node_t*) *state_pointer;
-    long* key = malloc(sizeof(long));
-    *key = state->key;
+    long key = state->key;
     *state_pointer = state->next;
     return key;
 }

@@ -1,13 +1,11 @@
-#include "comment.h"
-#include "post.h"
+#include <stdio.h>
 #include "mpi.h"
-#include "map.h"
-#include "map_iterator.h"
 #include "post_manager.h"
-#include "utils.h"
+#include "out_manager.h"
+#include "app_constants.h"
 
 int main(int argc, char* argv[]){
-    proc rank;
+    process_t rank;
     int size;
 
     MPI_Init(&argc, &argv);
@@ -23,8 +21,10 @@ int main(int argc, char* argv[]){
         case COMMENT_MANAGER:
             break;
         case OUT_MANAGER:
+            out_manager_run();
             break;
         default:
+            printf("Rank error! I'm the process with rank %d\n", rank);
             break;
     }
 

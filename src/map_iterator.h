@@ -11,6 +11,6 @@ int map_it_hasnext(map_t map, void* state);
 
 //return the key of the next element.
 //Requires a pointer to the iterator state
-void* map_it_next(map_t map, void** state);
+long map_it_next(map_t map, void** state);
 
 #endif
