@@ -24,6 +24,14 @@ void out_print_tuple(long ts, out_tuple* array ) {
 	printf(">\n");
 }
 
+int out_tuple_compare(out_tuple first, out_tuple second){
+	if(first.score == second.score && first.ts == second.ts)
+		return (utils_compare_int(first.comment_ts, second.comment_ts));
+	if(first.score == second.score)
+		return (utils_compare_int(first.ts, second.ts));
+	return (utils_compare_int(first.score, second.score));
+}
+
 void copyTuple(out_tuple *dest, out_tuple *src){
 	dest->num_commenters = src->num_commenters;
 	dest->post_id = src->post_id;
@@ -39,22 +47,13 @@ int sort_tuples(out_tuple* array, int n) {
 
    for(k=0; k<n-1; k++) {
          for (i=0; i<n-1-k; i++) {
-           if (array[i].score < array[i+1].score) /* "<" to have decreasing order */
+           if ( out_tuple_compare(array[i], array[i+1]) < 0 ) /* "<" to have decreasing order */
            {
              copyTuple(&tmp , &array[i]);
              copyTuple(&array[i], &array[i+1]);
              copyTuple(&array[i+1], &tmp);
              changed = 1;
            }
-		   // If scores are equals check timestamps
-		   else if ((array[i].score == array[i+1].score) && (array[i].ts < array[i+1].ts))
-		   {
-			 copyTuple(&tmp , &array[i]);
-			 copyTuple(&array[i], &array[i+1]);
-			 copyTuple(&array[i+1], &tmp);
-			 changed = 1;
-		   }
-		   // TODO: if scores and timestamps are equals, rank based on the timestamps of their last received related comments
          }
      }
    return changed;

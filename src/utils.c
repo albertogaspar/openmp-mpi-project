@@ -218,3 +218,11 @@ void str_split_2(char* a_str, const char a_delim, char* result[])
         //*(result + idx) = 0;
     }
 }
+
+int utils_compare_int(int first, int second){
+	if(first > second)
+		return 1;
+	if(second > first)
+		return -1;
+	return 0;
+}
