@@ -5,6 +5,7 @@
 
 typedef struct out_tuple{
 	time_t ts;
+	time_t comment_ts;  //ts of the last comment
 	long post_id;
 	long user_id;
 	int num_commenters;

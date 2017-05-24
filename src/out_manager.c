@@ -59,17 +59,23 @@ int sort_tuples(out_tuple* array, int n) {
    return changed;
  }
 
+void init_best_posts(out_tuple* best_posts) {
+	int i;
+
+	for(i=0; i<NUM_OF_BEST + 1; i++) {
+			best_posts[i].ts = -1;
+			best_posts[i].comment_ts = -1;
+			best_posts[i].post_id = -1;
+			best_posts[i].user_id = -1;
+			best_posts[i].num_commenters = -1;
+			best_posts[i].score = -1;
+	}
+}
 
 void out_manager_run(){
-	int i=0;
+
 	out_tuple best_posts[NUM_OF_BEST + 1];
-	for(i=0; i<NUM_OF_BEST + 1; i++) {
-		best_posts[i].ts = -1;
-		best_posts[i].post_id = -1;
-		best_posts[i].user_id = -1;
-		best_posts[i].num_commenters = -1;
-		best_posts[i].score = -1;
-	}
+	init_best_posts(best_posts);
 	out_tuple temp;
 	post_score first_msg;
 	user_num second_msg;
@@ -78,7 +84,7 @@ void out_manager_run(){
 	int changed;
 
 	MPI_Recv(&current_ts, 1, MPI_LONG, MASTER, TAG, MPI_COMM_WORLD, &stat);
-	printf("recieved current_ts: %ld\n", current_ts);
+	printf("received current_ts: %ld\n", current_ts);
 
 	//stop when receive current_ts=-1
 	while(current_ts!=-1) {
@@ -98,7 +104,7 @@ void out_manager_run(){
 
 		//receive next ts
 		MPI_Recv(&current_ts, 1, MPI_LONG, MASTER, TAG, MPI_COMM_WORLD, &stat);
-		printf("recieved current_ts: %ld\n", current_ts);
+		printf("received current_ts: %ld\n", current_ts);
 
 	}
 
