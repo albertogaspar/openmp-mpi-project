@@ -5,18 +5,9 @@
 #include "comment.h"
 #include "utils.h"
 
-void* decrease_score(void* arg){
-    struct comment *comment = arg;
-    while(comment->score > 0){
-        sleep(60*60*24); // sleep for 24 hours
-        comment->score -= 1;
-    }
-    pthread_exit(NULL);
-}
 
-// Create a new post
-comment* create_comment(time_t ts, long comment_id, long user_id, char* comment,
-    char* user, long comment_replied, long post_commented)
+comment* comment_create(time_t ts, long comment_id, long user_id, char* content, char* user,
+		long comment_replied, long commented_post)
 {
     struct comment* new_comment;
     new_comment = (struct comment*) malloc(sizeof(struct comment));
@@ -26,15 +17,13 @@ comment* create_comment(time_t ts, long comment_id, long user_id, char* comment,
     new_comment->ts = ts;
     new_comment->comment_id = comment_id;
     new_comment->user_id = user_id;
-    new_comment->comment = comment;
+    new_comment->content = content;
     new_comment->user = user;
     new_comment->comment_replied = comment_replied;
-    new_comment->post_commented = post_commented;
+    new_comment->commented_post = commented_post;
     new_comment->score = 10;
 
-    // Spawn a thread that decreses the score every 24 hours
-    //pthread_t tid;
-    //pthread_create(&tid, NULL, &decrease_score, new_comment);
+    return new_comment;
 }
 
 // Delete a post

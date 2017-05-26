@@ -55,22 +55,23 @@ long int strtol_def(char* string, long int def)
     return strtol(string, NULL, 10);
 }
 
-int parse_comment(struct comment* comment, char* line){
-    comment->ts = parse_ts(strsep(&line, SPLITTER));
-    comment->comment_id = strtol_def(strsep(&line, SPLITTER), -1);
-    comment->user_id = strtol_def(strsep(&line, SPLITTER), -1);
+int parse_comment(char* line){
+    time_t ts = parse_ts(strsep(&line, SPLITTER));
+    long comment_id = strtol_def(strsep(&line, SPLITTER), -1);
+    long user_id = strtol_def(strsep(&line, SPLITTER), -1);
+
     char* com = strsep(&line, SPLITTER);
-    comment->comment = (char*) malloc(strlen(com)*sizeof(char));
-    strcpy(comment->comment, com);
+    char* content = (char*) malloc(strlen(com)*sizeof(char));
+    strcpy(content, com);
+
     char* us = strsep(&line, SPLITTER);
-    comment->user = (char*) malloc(strlen(us)*sizeof(char));
-    strcpy(comment->user, us);
-    comment->comment_replied = strtol_def(strsep(&line, SPLITTER), -1);
-    comment->post_commented = strtol_def(strsep(&line, SPLITTER), -1);
-    comment->score = 10;
-    printf("TS:%ld , CID: %ld, UID: %ld, C: %s, U: %s, CR: %ld, PC: %ld, S: %d \n\n", comment->ts, comment->comment_id,
-    comment->user_id,comment->comment,comment->user,comment->comment_replied,comment->post_commented,comment->score);
-    return 0;
+    char* user = (char*) malloc(strlen(us)*sizeof(char));
+    strcpy(user, us);
+
+    long comment_replied = strtol_def(strsep(&line, SPLITTER), -1);
+    long commented_post = strtol_def(strsep(&line, SPLITTER), -1);
+
+    return comment_create(ts, comment_id, user_id, content, user, comment_replied, commented_post);
 }
 
 struct comment* parser_next_comment()
@@ -78,12 +79,11 @@ struct comment* parser_next_comment()
     char line[500];
     // Allocation of space for new comment
     struct comment* new_comment;
-    new_comment = (struct comment*) malloc(sizeof(struct comment));
     // Read one line of the file
     fgets(line, 500, (FILE*) file);
     if (line == NULL || new_comment==NULL)
         return NULL;
-    parse_comment(new_comment, line);
+    new_comment = parse_comment(line);
     return new_comment;
 }
 

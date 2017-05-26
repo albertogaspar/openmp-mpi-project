@@ -8,7 +8,7 @@ post* post_create(long ts, long post_id, long user_id, char* content, char* user
 {
     post* new_post = (post*) malloc(sizeof(post));
     if (post==NULL){
-        exit(1);
+        return NULL;
     }
     new_post->ts = ts;
     new_post->post_id = post_id;
@@ -19,6 +19,8 @@ post* post_create(long ts, long post_id, long user_id, char* content, char* user
     new_post->num_of_dec = 0;
     new_post->last_comment_ts = -1;
     map_init( new_post->commenters);
+
+    return new_post;
 }
 
 // Delete a post

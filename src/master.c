@@ -1,8 +1,55 @@
 #include <stdio.h>
 #include "mpi.h"
 #include "post_manager.h"
+#include "comment_manager.h"
 #include "out_manager.h"
 #include "app_constants.h"
+
+void master_run(){
+	MPI_Status stat, stat;
+	ts_rank current_tr, next_tr;
+	time_t received_ts;
+	int n_stops = 0;
+
+	MPI_Recv(&received_ts, 1, MPI_LONG, MPI_ANY_SOURCE, GENERIC_TAG, MPI_COMM_WORLD, &stat);
+	current_tr.ts = received_ts;
+	current_tr.rank = stat.MPI_SOURCE;
+	MPI_Recv(&received_ts, 1, MPI_LONG, MPI_ANY_SOURCE, GENERIC_TAG, MPI_COMM_WORLD, &stat);
+	if(received_ts > current_tr.ts) {
+		next_tr.ts = received_ts;
+		next_tr.rank = stat.MPI_SOURCE;
+	}
+	else {
+		next_tr.ts = current_tr.ts;
+		next_tr.rank = current_tr.rank;
+		current_tr.ts = received_ts;
+		current_tr.rank = stat.MPI_SOURCE;
+	}
+	MPI_Bcast(&current_tr, 1, MPI_LONG_INT, MASTER, MPI_COMM_WORLD);
+
+	while(n_stops<2) {
+		MPI_Recv(&received_ts, 1, MPI_LONG, MPI_ANY_SOURCE, GENERIC_TAG, MPI_COMM_WORLD, &stat);
+		if(received_ts==STOP) {
+			n_stops++;
+		}
+		else {
+			if(received_ts > current_ts) {
+				current_tr.ts = next_tr.ts;
+				current_tr.rank = next_tr.rank;
+				next_tr.ts = received_ts;
+				next_tr.rank = stat.MPI_SOURCE;
+			}
+			else {
+				next_tr.ts = current_tr.ts;
+				next_tr.rank = current_tr.rank;
+				current_tr.ts = received_ts;
+				current_tr.rank = stat.MPI_SOURCE;
+			}
+			MPI_Bcast(&current_tr, 1, MPI_LONG_INT, MASTER, MPI_COMM_WORLD);
+
+		}
+	}
+}
 
 int main(int argc, char* argv[]){
     process_t rank;
@@ -13,12 +60,14 @@ int main(int argc, char* argv[]){
 
     switch (rank)
     {
-        case MASTER: 
+        case MASTER:
+        	master_run();
             break;
         case POST_MANAGER:
             post_manager_run();
             break;
         case COMMENT_MANAGER:
+        	comment_manager_run();
             break;
         case OUT_MANAGER:
             out_manager_run();

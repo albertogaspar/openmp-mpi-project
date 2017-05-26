@@ -87,7 +87,7 @@ void out_manager_run(){
 	printf("received current_ts: %ld\n", current_ts);
 
 	//stop when receive current_ts=-1
-	while(current_ts!=-1) {
+	while(current_ts!=STOP) {
 		//receiving out tuple from post manager
 		MPI_Datatype MPI_out_tuple = serialize_out_tuple();
 		MPI_Recv(&temp, 1, MPI_out_tuple, POST_MANAGER, GENERIC_TAG, MPI_COMM_WORLD, &stat);

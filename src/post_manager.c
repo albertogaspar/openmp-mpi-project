@@ -4,12 +4,10 @@
 #include "map.h"
 #include "map_iterator.h"
 #include "utils.h"
-
-//period of decrementation of the score in milliseconds
-#define PERIOD_OF_DECR 24 * 3600 * 1000
+#include "app_constants.h"
 
 void post_manager_run(){
-    thread_safe = false;
+	time_t stop_time = STOP;
     int count;
     long int current_ts;
     MPI_Status stat;
@@ -26,34 +24,33 @@ void post_manager_run(){
         MPI_Recv(&current_ts, 1, MPI_LONG, MASTER, GENERIC_TAG, MPI_COMM_WORLD, &stat);
         // Update score of posts (24h decrement)
         daily_decrement(posts, current_ts);
-        if(p->ts <= )
+
         while (p->ts > current_ts)
         {
-            out_tuple ot = out_create_tuple(p);
-            MPI_Send(&ot, 1, MPI_out_tuple, OUT_MANAGER, GENERIC_TAG, MPI_COMM_WORLD);
+
             // Wait for points coming from comments -> gets number of posts to update
             MPI_Recv(&count, 1, MPI_LONG, COMMENT_MANAGER, GENERIC_TAG, MPI_COMM_WORLD, &stat);
             // gets the pairs (post_id, delta_points)
             for(i=0; i<count; i++){
             	//distinguish pair by tag
             	int increment;
-                long post_id, commenter_id = -1;
+                long commenter_id = -1;
+                post_increment pi;
+                post* post;
 
-                MPI_Recv(&post_id, 1, MPI_LONG, COMMENT_MANAGER, MPI_ANY_TAG, MPI_COMM_WORLD, &stat);
+                MPI_Recv(&pi, 1, MPI_LONG_INT, COMMENT_MANAGER, MPI_ANY_TAG, MPI_COMM_WORLD, &stat);
 
-                post* post = map_get(posts, post_id);
-                if(stat.MPI_TAG == NEW_COMMENT) {
-                    //TODO: *****add tags NEW_COMMENT and DECREMENT******
-                    MPI_Recv(&commenter_id, 1, MPI_LONG, COMMENT_MANAGER, MPI_ANY_TAG, MPI_COMM_WORLD, &stat);
-                    
-                    increment = STARTING_SCORE;
+                post = map_get(posts, pi.post_id);
+                if(stat.MPI_TAG == NEW_COMMENT_UPDATE) {
+                    //receive the commenter userid
+                    MPI_Recv(&commenter_id, 1, MPI_LONG, COMMENT_MANAGER, GENERIC_TAG, MPI_COMM_WORLD, &stat);
                     //since we update the global timestamp only when a comment or a post is read
                     //and post_manager is waiting, current_ts is the timestamp of the comment we are receiving
-                	post_add_comments_info(post, pair.user_id, current_ts);
+                	post_add_comments_info(post, commenter_id, current_ts);
                 }
-                else {
-                	increment = DAILY_DECREMENT;
-                }
+
+                increment = pi.increment;
+
                 //since these update aren't due to post own daily drecrement, is_daily_decrement is false in both cases
                 bool is_active = post_update_score(post, increment, false);
                 if(!is_active){
@@ -61,7 +58,7 @@ void post_manager_run(){
                     posts = map_remove(posts, post_id);
                 }
                 else{
-                    out_tuple ot = out_create_tuple(p);
+                    out_tuple ot = out_create_tuple(post);
                     MPI_Send(&ot, 1, MPI_out_tuple, OUT_MANAGER, GENERIC_TAG, MPI_COMM_WORLD);
                 }
 
@@ -72,7 +69,12 @@ void post_manager_run(){
             daily_decrement(posts, current_ts);
             
         }
+        //if my timestamp, send the new post to out and read next
+        out_tuple ot = out_create_tuple(p);
+        MPI_Send(&ot, 1, MPI_out_tuple, OUT_MANAGER, GENERIC_TAG, MPI_COMM_WORLD);
     }
+    //finished reading posts from the file
+    MPI_Send(&stop_time, 1, MPI_LONG, MASTER, GENERIC_TAG, MPI_COMM_WORLD);
 }
 
 void daily_decrement(map_t posts, long current_ts) {
@@ -83,14 +85,14 @@ void daily_decrement(map_t posts, long current_ts) {
 
     while(map_it_hasnext(posts, iterator)){
 
-        k = map_it_next(map, &iterator);
-        p = map_get(map, k);
+        k = map_it_next(posts, &iterator);
+        p = map_get(posts, k);
     	//time elapsed since last decrementation
 		long lifetime = current_ts - p->ts;
 		//correct number of decrementation
 		long num_of_dec = lifetime % PERIOD_OF_DECR;
 		//num of points to be subtracted to the score
-		long delta = num_of_dec - p->num_of_dec;
+		long delta = num_of_dec + p->num_of_dec*DAILY_DECREMENT;;
 
         if(delta != 0){
             bool is_active = post_update_score(p, delta, false);
