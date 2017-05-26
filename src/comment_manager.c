@@ -21,7 +21,7 @@ void comment_manager_run(){
 	time_t stop_time = STOP;
     thread_safe = false;
     int count;
-    long int current_ts;
+    ts_rank current_tr;
     MPI_Status stat;
     map_t comments = map_init();
     map_t posts_to_update = map_init();
@@ -38,14 +38,14 @@ void comment_manager_run(){
         // Send timestamp of latest post
         MPI_Send(&(c->ts), 1, MPI_LONG, MASTER, GENERIC_TAG, MPI_COMM_WORLD);
         // Receive current timestamp from master
-        MPI_Recv(&current_ts, 1, MPI_LONG, MASTER, GENERIC_TAG, MPI_COMM_WORLD, &stat);
+        MPI_Bcast(&current_tr, 1, MPI_LONG_INT, MASTER, MPI_COMM_WORLD);
 
         //if the received timestamp is greater or equal than my ts, then compute updates and read next
         //else if it's less than my ts, wait until the post manager reaches at least my ts
-        while (c->ts > current_ts)
+        while (c->ts >= current_tr.ts && current_tr.rank != COMMENT_MANAGER )
         {
         	//read next timestamp
-        	MPI_Recv(&current_ts, 1, MPI_LONG, MASTER, GENERIC_TAG, MPI_COMM_WORLD, &stat);
+        	MPI_Bcast(&current_tr, 1, MPI_LONG_INT, MASTER, MPI_COMM_WORLD);
         }
 
 		void *iterator;

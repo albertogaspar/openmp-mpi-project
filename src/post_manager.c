@@ -9,7 +9,7 @@
 void post_manager_run(){
 	time_t stop_time = STOP;
     int count;
-    long int current_ts;
+    ts_rank current_tr;
     MPI_Status stat;
     map_t posts = map_init();
     struct post* p = NULL;
@@ -21,11 +21,11 @@ void post_manager_run(){
         // Send timestamp of latest post
         MPI_Send(&(p->ts), 1, MPI_LONG, MASTER, GENERIC_TAG, MPI_COMM_WORLD);
         // Receive current timestamp from master
-        MPI_Recv(&current_ts, 1, MPI_LONG, MASTER, GENERIC_TAG, MPI_COMM_WORLD, &stat);
+    	MPI_Bcast(&current_tr, 1, MPI_LONG_INT, MASTER, MPI_COMM_WORLD);
         // Update score of posts (24h decrement)
         daily_decrement(posts, current_ts);
 
-        while (p->ts > current_ts)
+        while (p->ts > current_tr->ts)
         {
 
             // Wait for points coming from comments -> gets number of posts to update
@@ -65,7 +65,7 @@ void post_manager_run(){
             }
 
             //read next timestamp
-            MPI_Recv(&current_ts, 1, MPI_LONG, MASTER, GENERIC_TAG, MPI_COMM_WORLD, &stat);
+            MPI_Bcast(&current_tr, 1, MPI_LONG_INT, MASTER, MPI_COMM_WORLD);
             daily_decrement(posts, current_ts);
             
         }
