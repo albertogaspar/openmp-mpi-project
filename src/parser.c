@@ -6,8 +6,6 @@
 //#include "utils.h"
 
 #define LIST_MAX 10
-#define COMMENT_FILE "../resources/comments.dat"
-#define POSTS_FILE "../resources/posts.dat"
 #define SPLITTER "|"
 
 
