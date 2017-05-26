@@ -27,7 +27,14 @@ void comment_manager_run(){
     map_t posts_to_update = map_init();
     struct comment* c = NULL;
 
-    while(c = parser_next_comment()) {
+    FILE *file;
+	file = fopen(COMMENT_FILE,"r");
+	if(!file)
+	{
+		printf("Error opening file\n");
+		return -1;
+	}
+    while(c = parser_next_comment(file)) {
 
     	//get the commented post
     	set_commented_post(comments, c);

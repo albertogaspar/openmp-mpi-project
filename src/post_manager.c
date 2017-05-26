@@ -15,7 +15,14 @@ void post_manager_run(){
     struct post* p = NULL;
     MPI_Datatype MPI_out_tuple = serialize_out_tuple();
 
-    while(p = parser_next_post()) {
+    FILE *file;
+	file = fopen(POST_FILE,"r");
+	if(!file)
+	{
+		printf("Error opening file\n");
+		return -1;
+	}
+    while(p = parser_next_post(file)) {
         map_put(posts, p->post_id, p);
         // TODO: SSsend or Send? Blocking
         // Send timestamp of latest post

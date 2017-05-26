@@ -6,8 +6,8 @@
 //#include "utils.h"
 
 #define LIST_MAX 10
-#define COMMENT_FILE "comments.dat"
-#define POSTS_FILE "posts.dat"
+#define COMMENT_FILE "../resources/comments.dat"
+#define POSTS_FILE "../resources/posts.dat"
 #define SPLITTER "|"
 
 
@@ -74,13 +74,13 @@ int parse_comment(char* line){
     return comment_create(ts, comment_id, user_id, content, user, comment_replied, commented_post);
 }
 
-struct comment* parser_next_comment()
+struct comment* parser_next_comment(FILE* file)
 {
     char line[500];
     // Allocation of space for new comment
     struct comment* new_comment;
     // Read one line of the file
-    fgets(line, 500, (FILE*) file);
+    fgets(line, 500, file);
     if (line == NULL || new_comment==NULL)
         return NULL;
     new_comment = parse_comment(line);
@@ -105,13 +105,13 @@ post parse_post(char* line){
     return post_create(ts, post_id, user_id, content, user);
 }
 
-struct post* parser_next_post()
+struct post* parser_next_post(FILE* file)
 {
     char line[500];
     // Allocation of space for new comment
     struct post* new_post;
     // Read one line of the file
-    fgets(line, 500, (FILE*) file);
+    fgets(line, 500, file);
     if (line == NULL || new_post==NULL)
         return NULL;
     new_post = parse_post(line);
