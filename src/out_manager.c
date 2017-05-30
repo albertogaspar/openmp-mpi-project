@@ -4,6 +4,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "serialization.h"
+#include "constants.h"
+#include "types.h"
 
 #define NUM_OF_BEST 3
 
@@ -37,7 +39,7 @@ void copyTuple(out_tuple *dest, out_tuple *src){
 	dest->post_id = src->post_id;
 	dest->score = src->score;
 	dest->user_id = src->user_id;
-	dest->ts = src->ts; 
+	dest->ts = src->ts;
 }
 
 int sort_tuples(out_tuple* array, int n) {
@@ -77,8 +79,6 @@ void out_manager_run(){
 	out_tuple best_posts[NUM_OF_BEST + 1];
 	init_best_posts(best_posts);
 	out_tuple temp;
-	post_score first_msg;
-	user_num second_msg;
 	MPI_Status stat;
 	long int current_ts;
 	int changed;

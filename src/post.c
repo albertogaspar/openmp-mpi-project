@@ -7,7 +7,7 @@
 post* post_create(long ts, long post_id, long user_id, char* content, char* user)
 {
     post* new_post = (post*) malloc(sizeof(post));
-    if (post==NULL){
+    if (new_post==NULL){
         return NULL;
     }
     new_post->ts = ts;
@@ -37,12 +37,12 @@ void post_show(post* post)
 {
     char* date[32];
     ts2date(post->ts, date, sizeof(date));
-    printf("%s posted %s on %l \n", post->user, post->post, date);
+    printf("%s posted %s on %l \n", post->user, post->content, date);
 }
 
 bool post_update_score(post* p, int delta, bool is_daily_decrement){
     p->score = p->score + delta;
-    if (daily_decrement){
+    if (is_daily_decrement){
         p->num_of_dec = p->num_of_dec - delta;
     }
     if(p->score<=0) {
@@ -52,6 +52,6 @@ bool post_update_score(post* p, int delta, bool is_daily_decrement){
 }
 
 void post_add_comments(post* post, long user_id, time_t last_comment_ts){
-	map_put(post->commenters, user_id);
+	map_put(post->commenters, user_id, last_comment_ts);
     post->last_comment_ts = last_comment_ts;
 }

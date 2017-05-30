@@ -11,7 +11,7 @@ comment* comment_create(time_t ts, long comment_id, long user_id, char* content,
 {
     struct comment* new_comment;
     new_comment = (struct comment*) malloc(sizeof(struct comment));
-    if (comment==NULL){
+    if (new_comment == NULL){
         return NULL;
     }
     new_comment->ts = ts;
@@ -37,5 +37,5 @@ void show_comment(struct comment* comment)
 {
     char date[32];
     ts2date(comment->ts/1000, date, sizeof(date));
-    printf(" %s commented %s on %s \n", comment->user, comment->comment, date);
+    printf(" %s commented %s on %s \n", comment->user, comment->content, date);
 }

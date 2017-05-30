@@ -2,6 +2,7 @@
 #define POST_H
 #include "map.h"
 #include "utils.h"
+#include <time.h>
 
 
 typedef struct post{
