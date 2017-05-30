@@ -4,60 +4,56 @@
 #include "map.h"
 #include "map_iterator.h"
 #include "utils.h"
-#include "app_constants.h"
+
+//period of decrementation of the score in milliseconds
+#define PERIOD_OF_DECR 24 * 3600 * 1000
 
 void post_manager_run(){
-	time_t stop_time = STOP;
+    thread_safe = false;
     int count;
-    ts_rank current_tr;
+    long int current_ts;
     MPI_Status stat;
     map_t posts = map_init();
     struct post* p = NULL;
     MPI_Datatype MPI_out_tuple = serialize_out_tuple();
 
-    FILE *file;
-	file = fopen(POST_FILE,"r");
-	if(!file)
-	{
-		printf("Error opening file\n");
-		return -1;
-	}
-    while(p = parser_next_post(file)) {
+    while(p = parser_next_post()) {
         map_put(posts, p->post_id, p);
         // TODO: SSsend or Send? Blocking
         // Send timestamp of latest post
         MPI_Send(&(p->ts), 1, MPI_LONG, MASTER, GENERIC_TAG, MPI_COMM_WORLD);
         // Receive current timestamp from master
-    	MPI_Bcast(&current_tr, 1, MPI_LONG_INT, MASTER, MPI_COMM_WORLD);
+        MPI_Recv(&current_ts, 1, MPI_LONG, MASTER, GENERIC_TAG, MPI_COMM_WORLD, &stat);
         // Update score of posts (24h decrement)
         daily_decrement(posts, current_ts);
-
-        while (p->ts > current_tr->ts)
+        if(p->ts <= )
+        while (p->ts > current_ts)
         {
-
+            out_tuple ot = out_create_tuple(p);
+            MPI_Send(&ot, 1, MPI_out_tuple, OUT_MANAGER, GENERIC_TAG, MPI_COMM_WORLD);
             // Wait for points coming from comments -> gets number of posts to update
             MPI_Recv(&count, 1, MPI_LONG, COMMENT_MANAGER, GENERIC_TAG, MPI_COMM_WORLD, &stat);
             // gets the pairs (post_id, delta_points)
             for(i=0; i<count; i++){
             	//distinguish pair by tag
             	int increment;
-                long commenter_id = -1;
-                post_increment pi;
-                post* post;
+                long post_id, commenter_id = -1;
 
-                MPI_Recv(&pi, 1, MPI_LONG_INT, COMMENT_MANAGER, MPI_ANY_TAG, MPI_COMM_WORLD, &stat);
+                MPI_Recv(&post_id, 1, MPI_LONG, COMMENT_MANAGER, MPI_ANY_TAG, MPI_COMM_WORLD, &stat);
 
-                post = map_get(posts, pi.post_id);
-                if(stat.MPI_TAG == NEW_COMMENT_UPDATE) {
-                    //receive the commenter userid
-                    MPI_Recv(&commenter_id, 1, MPI_LONG, COMMENT_MANAGER, GENERIC_TAG, MPI_COMM_WORLD, &stat);
+                post* post = map_get(posts, post_id);
+                if(stat.MPI_TAG == NEW_COMMENT) {
+                    //TODO: *****add tags NEW_COMMENT and DECREMENT******
+                    MPI_Recv(&commenter_id, 1, MPI_LONG, COMMENT_MANAGER, MPI_ANY_TAG, MPI_COMM_WORLD, &stat);
+
+                    increment = STARTING_SCORE;
                     //since we update the global timestamp only when a comment or a post is read
                     //and post_manager is waiting, current_ts is the timestamp of the comment we are receiving
-                	post_add_comments_info(post, commenter_id, current_ts);
+                	post_add_comments_info(post, pair.user_id, current_ts);
                 }
-
-                increment = pi.increment;
-
+                else {
+                	increment = DAILY_DECREMENT;
+                }
                 //since these update aren't due to post own daily drecrement, is_daily_decrement is false in both cases
                 bool is_active = post_update_score(post, increment, false);
                 if(!is_active){
@@ -65,23 +61,18 @@ void post_manager_run(){
                     posts = map_remove(posts, post_id);
                 }
                 else{
-                    out_tuple ot = out_create_tuple(post);
+                    out_tuple ot = out_create_tuple(p);
                     MPI_Send(&ot, 1, MPI_out_tuple, OUT_MANAGER, GENERIC_TAG, MPI_COMM_WORLD);
                 }
 
             }
 
             //read next timestamp
-            MPI_Bcast(&current_tr, 1, MPI_LONG_INT, MASTER, MPI_COMM_WORLD);
+            MPI_Recv(&current_ts, 1, MPI_LONG, MASTER, GENERIC_TAG, MPI_COMM_WORLD, &stat);
             daily_decrement(posts, current_ts);
-            
+
         }
-        //if my timestamp, send the new post to out and read next
-        out_tuple ot = out_create_tuple(p);
-        MPI_Send(&ot, 1, MPI_out_tuple, OUT_MANAGER, GENERIC_TAG, MPI_COMM_WORLD);
     }
-    //finished reading posts from the file
-    MPI_Send(&stop_time, 1, MPI_LONG, MASTER, GENERIC_TAG, MPI_COMM_WORLD);
 }
 
 void daily_decrement(map_t posts, long current_ts) {
@@ -92,14 +83,14 @@ void daily_decrement(map_t posts, long current_ts) {
 
     while(map_it_hasnext(posts, iterator)){
 
-        k = map_it_next(posts, &iterator);
-        p = map_get(posts, k);
+        k = map_it_next(map, &iterator);
+        p = map_get(map, k);
     	//time elapsed since last decrementation
 		long lifetime = current_ts - p->ts;
 		//correct number of decrementation
 		long num_of_dec = lifetime % PERIOD_OF_DECR;
 		//num of points to be subtracted to the score
-		long delta = num_of_dec + p->num_of_dec*DAILY_DECREMENT;;
+		long delta = num_of_dec - p->num_of_dec;
 
         if(delta != 0){
             bool is_active = post_update_score(p, delta, false);
@@ -111,9 +102,50 @@ void daily_decrement(map_t posts, long current_ts) {
                 out_tuple ot = out_create_tuple(p);
                 MPI_Send(&ot, 1, MPI_out_tuple, OUT_MANAGER, GENERIC_TAG, MPI_COMM_WORLD);
             }
-            
         }
-
-        
     }
+}
+
+void parallel_daily_decrement(map_t posts, long current_ts) {
+    void *iterator = map_it_init(posts);
+    long k;
+    post *p;
+    MPI_Datatype MPI_out_tuple = serialize_out_tuple();
+    #pragma omp paralell shared (posts, MPI_out_tuple, current_ts)
+    {
+        // one thread adds all taks to the queue
+        #pragma omp single
+            while(map_it_hasnext(posts, iterator)){
+                k = map_it_next(map, &iterator);
+                p = map_get(map, k);
+                #pragma omp task firstprivate (p)
+                    // task is inserted in the queue and an available
+                    // thread will execute it
+                    process_post(p)
+            }
+    }
+}
+
+void process_post (struct post *p)
+{
+//time elapsed since last decrementation
+long lifetime = current_ts - p->ts;
+//correct number of decrementation
+long num_of_dec = lifetime % PERIOD_OF_DECR;
+//num of points to be subtracted to the score
+long delta = num_of_dec - p->num_of_dec;
+
+if(delta != 0){
+    // update score and check if post is till active after update, if not delte it.
+    bool is_active = post_update_score(p, delta, false);
+    if(!is_active){
+        post_delete(p);
+        posts = map_remove(posts, k);
+    }
+    else{
+        // send data to out manager
+        out_tuple ot = out_create_tuple(p);
+        MPI_Send(&ot, 1, MPI_out_tuple, OUT_MANAGER, GENERIC_TAG, MPI_COMM_WORLD);
+    }
+}
 }
