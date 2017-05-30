@@ -1,7 +1,7 @@
 #ifndef POST_H
 #define POST_H
 #include "map.h"
-#include "utils.h"
+#include "types.h"
 #include <time.h>
 
 

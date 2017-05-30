@@ -3,6 +3,8 @@
 
 #include <time.h>
 
+typedef enum { false, true } bool;
+
 typedef enum { GENERIC_TAG, NEW_COMMENT_UPDATE, DECREMENT_UPDATE} tag_t;
 
 typedef enum {

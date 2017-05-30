@@ -1,8 +1,8 @@
 #include "post.h"
 #include "utils.h"
-#include "app_constants.h"
 #include "map.h"
 #include "parser.h"
+#include "constants.h"
 
 // Create a new post
 post* post_create(long ts, long post_id, long user_id, char* content, char* user)
@@ -52,7 +52,7 @@ bool post_update_score(post* p, int delta, bool is_daily_decrement){
     return true;
 }
 
-void post_add_comments(post* post, long user_id, time_t last_comment_ts){
+void post_add_comments_info(post* post, long user_id, time_t last_comment_ts){
 	map_put(post->commenters, user_id, last_comment_ts);
     post->last_comment_ts = last_comment_ts;
 }

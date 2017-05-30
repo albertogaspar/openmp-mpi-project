@@ -1,8 +1,11 @@
+#include <stdio.h>
+#include <stdlib.h>
 #include "mpi.h"
 #include "map.h"
 #include "map_iterator.h"
 #include "utils.h"
-#include "app_constants.h"
+#include "constants.h"
+#include "types.h"
 #include "comment_manager.h"
 #include "comment.h"
 
@@ -16,79 +19,6 @@ void set_commented_post(map_t comments, comment* c) {
 		c->commented_post = comment_replied->commented_post;
 	}
 }
-
-void comment_manager_run(){
-	time_t stop_time = STOP;
-    thread_safe = false;
-    int count;
-    ts_rank current_tr;
-    MPI_Status stat;
-    map_t comments = map_init();
-    map_t posts_to_update = map_init();
-    struct comment* c = NULL;
-
-    FILE *file;
-	file = fopen(COMMENT_FILE,"r");
-	if(!file)
-	{
-		printf("Error opening file\n");
-		return -1;
-	}
-    while(c = parser_next_comment(file)) {
-
-    	//get the commented post
-    	set_commented_post(comments, c);
-
-    	//save new comment in the comments map
-        map_put(comments, c->comment_id, c);
-        // TODO: SSsend or Send? Blocking
-        // Send timestamp of latest post
-        MPI_Send(&(c->ts), 1, MPI_LONG, MASTER, GENERIC_TAG, MPI_COMM_WORLD);
-        // Receive current timestamp from master
-        MPI_Bcast(&current_tr, 1, MPI_LONG_INT, MASTER, MPI_COMM_WORLD);
-
-        //if the received timestamp is greater or equal than my ts, then compute updates and read next
-        //else if it's less than my ts, wait until the post manager reaches at least my ts
-        while (c->ts >= current_tr.ts && current_tr.rank != COMMENT_MANAGER )
-        {
-        	//read next timestamp
-        	MPI_Bcast(&current_tr, 1, MPI_LONG_INT, MASTER, MPI_COMM_WORLD);
-        }
-
-		void *iterator;
-		long post_id;
-		post_increment* pi;
-		//calculate 24H decrements and fill posts_to_update list
-		daily_decrement(comments, posts_to_update, current_ts);
-
-		// Send number of posts that need to be updated
-		count = map_size(posts_to_update) + 1;
-		MPI_Send(&count, 1, MPI_LONG, POST_MANAGER, GENERIC_TAG, MPI_COMM_WORLD);
-
-
-		iterator = map_it_init(posts_to_update);
-
-		//send all the daily updates to post manager
-		while(map_it_hasnext(posts_to_update, iterator)){
-
-			post_id = map_it_next(posts_to_update, &iterator);
-			pi = map_get(posts_to_update, post_id);
-
-			MPI_Send(pi, 1, MPI_LONG_INT, POST_MANAGER, DECREMENT_UPDATE, MPI_COMM_WORLD);
-
-		}
-		//send the new comment to post manager
-		pi->post_id = c->commented_post;
-		pi->increment = STARTING_SCORE;
-		MPI_Send(pi, 1, MPI_LONG_INT, POST_MANAGER, NEW_COMMENT_UPDATE, MPI_COMM_WORLD);
-		//send the user id of the commenter
-		MPI_Send(&c->user_id, 1, MPI_LONG, POST_MANAGER, GENERIC_TAG, MPI_COMM_WORLD);
-
-
-    }
-    MPI_Send(&stop_time, 1, MPI_LONG, MASTER, GENERIC_TAG, MPI_COMM_WORLD);
-}
-
 
 void daily_decrement(map_t comments, map_t posts_to_update,long current_ts) {
     void *iterator = map_it_init(comments);
@@ -116,7 +46,7 @@ void daily_decrement(map_t comments, map_t posts_to_update,long current_ts) {
 			//an increment is recorded for the post
 			if( pi == NULL ) {
 				pi = (post_increment*) malloc(sizeof(post_increment));
-				pi->post = post_id;
+				pi->post_id = post_id;
 				pi->increment = delta;
 				map_put(posts_to_update, post_id, pi);
 			}
@@ -130,9 +60,77 @@ void daily_decrement(map_t comments, map_t posts_to_update,long current_ts) {
                 comment_delete(c);
                 comments = map_remove(comments, k);
             }
+        }
+    }
+}
 
+void comment_manager_run(){
+	time_t stop_time = STOP;
+    int count;
+    ts_rank current_tr;
+    MPI_Status stat;
+    map_t comments = map_init();
+    map_t posts_to_update = map_init();
+    struct comment* c = NULL;
 
+    FILE *file;
+	file = fopen(COMMENT_FILE,"r");
+	if(!file)
+	{
+		printf("Error opening file\n");
+		exit(-1);
+	}
+    while(c = parser_next_comment(file)) {
+
+    	//get the commented post
+    	set_commented_post(comments, c);
+
+    	//save new comment in the comments map
+        map_put(comments, c->comment_id, c);
+        // TODO: SSsend or Send? Blocking
+        // Send timestamp of latest post
+        MPI_Send(&(c->ts), 1, MPI_LONG, MASTER, GENERIC_TAG, MPI_COMM_WORLD);
+        // Receive current timestamp from master
+        MPI_Bcast(&current_tr, 1, MPI_LONG_INT, MASTER, MPI_COMM_WORLD);
+
+        //if the received timestamp is greater or equal than my ts, then compute updates and read next
+        //else if it's less than my ts, wait until the post manager reaches at least my ts
+        while (c->ts >= current_tr.ts && current_tr.rank != COMMENT_MANAGER )
+        {
+        	//read next timestamp
+        	MPI_Bcast(&current_tr, 1, MPI_LONG_INT, MASTER, MPI_COMM_WORLD);
         }
 
+		void *iterator;
+		long post_id;
+		post_increment* pi;
+		//calculate 24H decrements and fill posts_to_update list
+		daily_decrement(comments, posts_to_update, current_tr.ts);
+
+		// Send number of posts that need to be updated
+		count = map_size(posts_to_update) + 1;
+		MPI_Send(&count, 1, MPI_LONG, POST_MANAGER, GENERIC_TAG, MPI_COMM_WORLD);
+
+
+		iterator = map_it_init(posts_to_update);
+
+		//send all the daily updates to post manager
+		while(map_it_hasnext(posts_to_update, iterator)){
+
+			post_id = map_it_next(posts_to_update, &iterator);
+			pi = map_get(posts_to_update, post_id);
+
+			MPI_Send(pi, 1, MPI_LONG_INT, POST_MANAGER, DECREMENT_UPDATE, MPI_COMM_WORLD);
+
+		}
+		//send the new comment to post manager
+		pi->post_id = c->commented_post;
+		pi->increment = STARTING_SCORE;
+		MPI_Send(pi, 1, MPI_LONG_INT, POST_MANAGER, NEW_COMMENT_UPDATE, MPI_COMM_WORLD);
+		//send the user id of the commenter
+		MPI_Send(&c->user_id, 1, MPI_LONG, POST_MANAGER, GENERIC_TAG, MPI_COMM_WORLD);
+
+
     }
+    MPI_Send(&stop_time, 1, MPI_LONG, MASTER, GENERIC_TAG, MPI_COMM_WORLD);
 }

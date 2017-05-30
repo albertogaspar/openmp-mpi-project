@@ -5,9 +5,6 @@
 #include <string.h>
 #define _XOPEN_SOURCE
 
-static const time_t default_time = 1230728833;
-static const char default_format[] = "%b %d %Y";
-
 char *zstring_strtok(char *str, const char *delim) {
     static char *static_str=0;    	/* var to store last address */
     int index=0, strlength=0;      	/* integers for indexes */

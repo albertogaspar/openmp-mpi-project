@@ -3,10 +3,11 @@
 #include "post_manager.h"
 #include "comment_manager.h"
 #include "out_manager.h"
-#include "app_constants.h"
+#include "constants.h"
+#include "types.h"
 
 void master_run(){
-	MPI_Status stat, stat;
+	MPI_Status stat;
 	ts_rank current_tr, next_tr;
 	time_t received_ts;
 	int n_stops = 0;
@@ -33,7 +34,7 @@ void master_run(){
 			n_stops++;
 		}
 		else {
-			if(received_ts > current_ts) {
+			if(received_ts > current_tr.ts) {
 				current_tr.ts = next_tr.ts;
 				current_tr.rank = next_tr.rank;
 				next_tr.ts = received_ts;

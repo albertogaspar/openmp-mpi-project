@@ -24,8 +24,7 @@ OBJ_DIR=obj
 
 #source file EXCEPT MAIN FILES here
 SRC = utils.c comment.c  post.c parser.c out_manager.c  \
-      post_manager.c comment_manager.c master.c map.c \
-      serialization.c
+      post_manager.c comment_manager.c master.c map.c
 # object files EXCEPT MAIN OBJECT FILES here
 OBJECTS =$(SRC:.c=.o)
 
