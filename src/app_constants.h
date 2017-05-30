@@ -1,5 +1,6 @@
 #ifndef APP_CONSTANTS_H
 #define APP_CONSTANTS_H
+#include <time.h>
 
 #define DAILY_DECREMENT -1
 #define STARTING_SCORE 10
