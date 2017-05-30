@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include "comment.h"
 #include "utils.h"
+#include "parser.h"
 
 
 comment* comment_create(time_t ts, long comment_id, long user_id, char* content, char* user,
@@ -27,15 +28,15 @@ comment* comment_create(time_t ts, long comment_id, long user_id, char* content,
 }
 
 // Delete a post
-void del_comment(struct comment* comment)
+void comment_delete(comment* comment)
 {
     free(comment);
 }
 
 // Print a post
-void show_comment(struct comment* comment)
+void comment_show(comment* comment)
 {
     char date[32];
-    ts2date(comment->ts/1000, date, sizeof(date));
+    parser_ts2date(comment->ts/1000, date, sizeof(date));
     printf(" %s commented %s on %s \n", comment->user, comment->content, date);
 }

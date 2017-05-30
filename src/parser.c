@@ -3,33 +3,29 @@
 #include <string.h>
 #include "post.h"
 #include "comment.h"
-//#include "utils.h"
+#include "constants.h"
 
 #define LIST_MAX 10
 #define SPLITTER "|"
 
 
-// // res is the container for the date, array_size should be at least 32
-// char* parser_ts2date(long t, char* res, int array_size)
-// {
-//         const char *format = default_format;
-//
-//         struct tm lt;
-//
-//         localtime_r(&t, &lt);
-//
-//         if (strftime(res, array_size, format, &lt) == 0) {
-//                 (void) fprintf(stderr,  "strftime(3): cannot format supplied "
-//                                         "date/time into buffer of size %u "
-//                                         "using: '%s'\n",
-//                                         array_size, format);
-//                 return NULL;
-//         }
-//
-//         printf("%u -> '%s'\n", (unsigned) t, res);
-// }
+// res is the container for the date, array_size should be at least 32
+void parser_ts2date(long t, char* res, int array_size)
+{
+        const char *format = default_format;
+        struct tm lt;
+        localtime_r(&t, &lt);
+        if (strftime(res, array_size, format, &lt) == 0) {
+                (void) fprintf(stderr,  "strftime(3): cannot format supplied "
+                                        "date/time into buffer of size %u "
+                                        "using: '%s'\n",
+                                        array_size, format);
+                return NULL;
+        }
+        printf("%u -> '%s'\n", (unsigned) t, res);
+}
 
-time_t parser_parse_ts(char* date)
+time_t parse_ts(char* date)
 {
     printf("%s\n", date);
     char** tokens = str_split(date, '.');

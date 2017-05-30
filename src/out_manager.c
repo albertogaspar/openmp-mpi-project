@@ -110,15 +110,13 @@ void out_manager_run(){
 
 }
 
-out_tuple out_create_tuple(post *p){
-	out_tuple ot;
-
-	ot.ts = p->ts;
-	ot.comment_ts = p->last_comment_ts;
-	ot.post_id = p-> post_id;
-	ot.user_id = p-> user_id;
-	ot.num_commenters = map_size(p->commenters);
-	ot.score = p-> score;
+void out_create_tuple(post *p, out_tuple* ot){
+	ot->ts = p->ts;
+	ot->comment_ts = p->last_comment_ts;
+	ot->post_id = p-> post_id;
+	ot->user_id = p-> user_id;
+	ot->num_commenters = map_size(p->commenters);
+	ot->score = p-> score;
 }
 /*
 int main(int argc, char *argv[]){

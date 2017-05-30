@@ -11,4 +11,7 @@
 #define COMMENT_FILE "../resources/comments.dat"
 #define POSTS_FILE "../resources/posts.dat"
 
+static const time_t default_time = 1230728833;
+static const char default_format[] = "%b %d %Y";
+
 #endif

@@ -34,15 +34,17 @@ void daily_decrement(map_t posts, long current_ts) {
                 posts = map_remove(posts, k);
             }
             else{
-                out_tuple ot = out_create_tuple(p);
+                out_tuple ot;
+                out_create_tuple(p, ot);
                 MPI_Send(&ot, 1, MPI_out_tuple, OUT_MANAGER, GENERIC_TAG, MPI_COMM_WORLD);
             }
         }
     }
 }
 
-void process_post (struct post *p, current_ts)
+void process_post (struct post *p, long current_ts)
 {
+    MPI_Datatype MPI_out_tuple = serialize_out_tuple();
     //time elapsed since last decrementation
     long lifetime = current_ts - p->ts;
     //correct number of decrementation
@@ -59,7 +61,8 @@ void process_post (struct post *p, current_ts)
         }
         else{
             // send data to out manager
-            out_tuple ot = out_create_tuple(p);
+            out_tuple ot;
+            out_create_tuple(p, ot);
             MPI_Send(&ot, 1, MPI_out_tuple, OUT_MANAGER, GENERIC_TAG, MPI_COMM_WORLD);
         }
     }
@@ -69,8 +72,7 @@ void parallel_daily_decrement(map_t posts, long current_ts) {
     void *iterator = map_it_init(posts);
     long k;
     post *p;
-    MPI_Datatype MPI_out_tuple = serialize_out_tuple();
-    #pragma omp paralell shared (posts, MPI_out_tuple)
+    #pragma omp paralell shared (posts)
     {
         // one thread adds all taks to the queue
         #pragma omp single
@@ -86,7 +88,7 @@ void parallel_daily_decrement(map_t posts, long current_ts) {
 }
 
 void post_manager_run(){
-    int count;
+    int count, i=0;
     long int current_ts;
     MPI_Status stat;
     map_t posts = map_init();
@@ -104,7 +106,8 @@ void post_manager_run(){
         daily_decrement(posts, current_ts);
         while (p->ts > current_ts)
         {
-            out_tuple ot = out_create_tuple(p);
+            out_tuple ot;
+            out_create_tuple(p, ot);
             MPI_Send(&ot, 1, MPI_out_tuple, OUT_MANAGER, GENERIC_TAG, MPI_COMM_WORLD);
             // Wait for points coming from comments -> gets number of posts to update
             MPI_Recv(&count, 1, MPI_LONG, COMMENT_MANAGER, GENERIC_TAG, MPI_COMM_WORLD, &stat);
@@ -117,7 +120,7 @@ void post_manager_run(){
                 MPI_Recv(&post_id, 1, MPI_LONG, COMMENT_MANAGER, MPI_ANY_TAG, MPI_COMM_WORLD, &stat);
 
                 post* post = map_get(posts, post_id);
-                if(stat.MPI_TAG == NEW_COMMENT) {
+                if(stat.MPI_TAG == NEW_COMMENT_UPDATE) {
                     //TODO: *****add tags NEW_COMMENT and DECREMENT******
                     MPI_Recv(&commenter_id, 1, MPI_LONG, COMMENT_MANAGER, MPI_ANY_TAG, MPI_COMM_WORLD, &stat);
 
@@ -136,7 +139,8 @@ void post_manager_run(){
                     posts = map_remove(posts, post_id);
                 }
                 else{
-                    out_tuple ot = out_create_tuple(p);
+                    out_tuple ot;
+                    out_create_tuple(p, ot);
                     MPI_Send(&ot, 1, MPI_out_tuple, OUT_MANAGER, GENERIC_TAG, MPI_COMM_WORLD);
                 }
 

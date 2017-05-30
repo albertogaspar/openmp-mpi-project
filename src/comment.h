@@ -19,9 +19,9 @@ typedef struct comment
 comment* comment_create(time_t ts, long comment_id, long user_id, char* content, char* user, long comment_replied, long commented_post);
 
 // Delete a comment
-void del_comment(comment* comment);
+void comment_delete(comment* comment);
 
 // Show comment
-void show_comment(comment* comment);
+void comment_show(comment* comment);
 
 #endif

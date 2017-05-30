@@ -7,6 +7,6 @@
 
 void out_manager_run();
 
-out_tuple out_create_tuple(post *p);
+void out_create_tuple(post *p, out_tuple* ot;);
 
 #endif

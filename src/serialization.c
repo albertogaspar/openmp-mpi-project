@@ -6,6 +6,7 @@
 #include "comment.h"
 #include "out_manager.h"
 #include "utils.h"
+#include "types.h"
 
 #define OUT_TUPLE_ITEMS 5
 /* create a type for struct out_tuple */

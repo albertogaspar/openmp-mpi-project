@@ -2,6 +2,7 @@
 #include "utils.h"
 #include "app_constants.h"
 #include "map.h"
+#include "parser.h"
 
 // Create a new post
 post* post_create(long ts, long post_id, long user_id, char* content, char* user)
@@ -35,8 +36,8 @@ void post_delete(post* post)
 // Print a post
 void post_show(post* post)
 {
-    char* date[32];
-    ts2date(post->ts, date, sizeof(date));
+    char date[32];
+    parser_ts2date(post->ts, date, sizeof(date));
     printf("%s posted %s on %l \n", post->user, post->content, date);
 }
 

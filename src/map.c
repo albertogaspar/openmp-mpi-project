@@ -4,7 +4,7 @@
 
 map_t map_init(){
     return NULL;
-} 
+}
 
 map_t map_put(map_t map, long key, void *value){
 	if( map_get(map, key)!=NULL ){
@@ -32,7 +32,7 @@ map_t map_remove(map_t map, long key){
 
 map_t map_empty(map_t map){
     void* it = map_it_init(map);
-    while(map_it_has_next(map, it)){
+    while(map_it_hasnext(map, it)){
         long key = map_it_next(map, &it);
         map = map_remove(map, key);
     }
