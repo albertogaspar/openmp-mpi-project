@@ -72,7 +72,7 @@ void parallel_daily_decrement(map_t posts, long current_ts) {
     void *iterator = map_it_init(posts);
     long k;
     post *p;
-    #pragma omp paralell shared (posts)
+    #pragma omp parallel shared (posts)
     {
         // one thread adds all taks to the queue
         #pragma omp single
@@ -89,7 +89,7 @@ void parallel_daily_decrement(map_t posts, long current_ts) {
 
 void post_manager_run(){
     int count, i=0;
-    long int current_ts;
+    ts_rank current_tr;
     MPI_Status stat;
     map_t posts = map_init();
     struct post* p = NULL;
@@ -101,10 +101,10 @@ void post_manager_run(){
         // Send timestamp of latest post
         MPI_Send(&(p->ts), 1, MPI_LONG, MASTER, GENERIC_TAG, MPI_COMM_WORLD);
         // Receive current timestamp from master
-        MPI_Recv(&current_ts, 1, MPI_LONG, MASTER, GENERIC_TAG, MPI_COMM_WORLD, &stat);
+        MPI_Bcast(&current_tr, 1, MPI_LONG_INT, MASTER, MPI_COMM_WORLD);
         // Update score of posts (24h decrement)
-        daily_decrement(posts, current_ts);
-        while (p->ts > current_ts)
+        daily_decrement(posts, current_tr.ts);
+        while (p->ts > current_tr.ts)
         {
             out_tuple ot;
             out_create_tuple(p, ot);
@@ -147,8 +147,8 @@ void post_manager_run(){
             }
 
             //read next timestamp
-            MPI_Recv(&current_ts, 1, MPI_LONG, MASTER, GENERIC_TAG, MPI_COMM_WORLD, &stat);
-            daily_decrement(posts, current_ts);
+            MPI_Bcast(&current_tr, 1, MPI_LONG_INT, MASTER, MPI_COMM_WORLD);
+            daily_decrement(posts, current_tr.ts);
 
         }
     }

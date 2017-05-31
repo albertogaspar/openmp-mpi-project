@@ -12,10 +12,10 @@ void master_run(){
 	time_t received_ts;
 	int n_stops = 0;
 
-	MPI_Recv(&received_ts, 1, MPI_LONG, MPI_ANY_SOURCE, GENERIC_TAG, MPI_COMM_WORLD, &stat);
+	MPI_Recv(&received_ts, 1, MPI_LONG, POST_MANAGER, GENERIC_TAG, MPI_COMM_WORLD, &stat);
 	current_tr.ts = received_ts;
 	current_tr.rank = stat.MPI_SOURCE;
-	MPI_Recv(&received_ts, 1, MPI_LONG, MPI_ANY_SOURCE, GENERIC_TAG, MPI_COMM_WORLD, &stat);
+	MPI_Recv(&received_ts, 1, MPI_LONG, COMMENT_MANAGER, GENERIC_TAG, MPI_COMM_WORLD, &stat);
 	if(received_ts > current_tr.ts) {
 		next_tr.ts = received_ts;
 		next_tr.rank = stat.MPI_SOURCE;
@@ -32,13 +32,23 @@ void master_run(){
 		MPI_Recv(&received_ts, 1, MPI_LONG, MPI_ANY_SOURCE, GENERIC_TAG, MPI_COMM_WORLD, &stat);
 		if(received_ts==STOP) {
 			n_stops++;
+			current_tr.ts = next_tr.ts;
+			current_tr.rank = next_tr.rank;
+			MPI_Bcast(&current_tr, 1, MPI_LONG_INT, MASTER, MPI_COMM_WORLD);
 		}
 		else {
 			if(received_ts > current_tr.ts) {
-				current_tr.ts = next_tr.ts;
-				current_tr.rank = next_tr.rank;
-				next_tr.ts = received_ts;
-				next_tr.rank = stat.MPI_SOURCE;
+				if(received_ts > next_tr.ts) {
+					current_tr.ts = next_tr.ts;
+					current_tr.rank = next_tr.rank;
+					next_tr.ts = received_ts;
+					next_tr.rank = stat.MPI_SOURCE;
+				}
+				else {
+					current_tr.ts = received_ts;
+					current_tr.rank = stat.MPI_SOURCE;
+				}
+
 			}
 			else {
 				next_tr.ts = current_tr.ts;
@@ -57,7 +67,7 @@ int main(int argc, char* argv[]){
     int size;
 
     MPI_Init(&argc, &argv);
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    MPI_Comm_rank(MPI_COMM_WORLD, (int *)&rank);
 
     switch (rank)
     {
