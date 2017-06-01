@@ -9,6 +9,7 @@
 #include "types.h"
 #include <omp.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include "output.h"
 
 void delete_inactive_posts(map_t posts_to_delete, map_t posts) {
@@ -35,8 +36,11 @@ void daily_decrement(map_t posts, long current_ts) {
     post *best_three[NUM_OF_BEST] = {NULL, NULL, NULL};
     //MPI_Datatype MPI_out_tuple = serialize_out_tuple();
 
+    printf("POST MANAGER: daily decrement started\n");
     while(map_it_hasnext(posts, iterator)){
         k = map_it_next(posts, &iterator);
+        printf("POST_ITERATOR: next=%ld\n", k);
+
         p = map_get(posts, k);
     	//time elapsed since last decrement
 		long lifetime = current_ts - p->ts;
@@ -47,10 +51,10 @@ void daily_decrement(map_t posts, long current_ts) {
 
         if(delta != 0){
 
-
+        	printf("POST MANAGER: post %ld is gonna be decremented by %ld\n", p->post_id, delta);
             bool is_active = post_update_score(p, delta, false);
             if(!is_active){
-            	map_put(posts_to_delete, k, p);
+            	posts_to_delete = map_put(posts_to_delete, k, p);
             }
 
         }
@@ -62,7 +66,6 @@ void daily_decrement(map_t posts, long current_ts) {
     if(order_changed) {
     	out_print_best(best_three, current_ts);
     }
-
 
 }
 
@@ -118,9 +121,18 @@ void post_manager_run(){
     struct post* p = NULL;
     //MPI_Datatype MPI_out_tuple = serialize_out_tuple();
 
-    while(p = parser_next_post()) {
+    FILE *file;
+    file = fopen(POSTS_FILE, "r");
+    if(!file) {
+    		 printf("file: %s\n" , POSTS_FILE);
+             perror("Error opening file");
+             return;
+    }
+
+    while(p = parser_next_post(&file)) {
     	printf("POST_MANAGER: Post read: %ld, %ld\n", p->post_id, p->ts);
-        map_put(posts, p->post_id, p);
+        posts = map_put(posts, p->post_id, p);
+        printf("POST_MANAGER: Map size= %d\n", map_size(posts));
         // TODO: SSsend or Send? Blocking
         // Send timestamp of latest post
         MPI_Send(&(p->ts), 1, MPI_LONG, MASTER, GENERIC_TAG, MPI_COMM_WORLD);
@@ -131,6 +143,7 @@ void post_manager_run(){
         while (p->ts > current_tr.ts || current_tr.rank == COMMENT_MANAGER)
         {
 
+        	printf("POST_MANAGER: waiting for comments updates\n");
             // Wait for points coming from comments -> gets number of posts to update
             MPI_Recv(&count, 1, MPI_LONG, COMMENT_MANAGER, GENERIC_TAG, MPI_COMM_WORLD, &stat);
             // gets the pairs (post_id, delta_points)
@@ -172,4 +185,5 @@ void post_manager_run(){
         }
         daily_decrement(posts, current_tr.ts);
     }
+    fclose(file);
 }

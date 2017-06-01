@@ -1,13 +1,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 #include "post.h"
 #include "comment.h"
 #include "constants.h"
 
 #define LIST_MAX 10
 #define SPLITTER "|"
-
+#define _XOPEN_SOURCE
 
 // res is the container for the date, array_size should be at least 32
 /*void parser_ts2date(long t, char* res, int array_size)
@@ -23,23 +24,26 @@
                 return NULL;
         }
         printf("%u -> '%s'\n", (unsigned) t, res);
-}
+} */
 
 time_t parse_ts(char* date)
 {
-    printf("%s\n", date);
-    char** tokens = str_split(date, '.');
-    struct tm mytm;
-    time_t t;
+	struct tm mytm;
+	time_t t;
+	int millisec;
+    printf("PARSER: ts read: %s\n", date);
+    char* tokens = strsep(&date, ".");
 
-    strptime(date,"%Y-%m-%dT%H:%M:%S",&mytm);
-    char* part2 = *(tokens + 1);
-    tokens = str_split(part2, '+');
+    strptime(tokens,"%Y-%m-%dT%H:%M:%S",&mytm);
+    tokens = strsep(&date, "+");
+
     t = mktime(&mytm);
-    t = t * 1000 + atoi(*(tokens+0));
-    printf("t=%ld\n",t);
+    millisec = atoi(tokens);
+
+    t = t*1000 + millisec;
+    printf("PARSER: t=%ld\n",t);
     return t;
-} */
+}
 
 
 long int strtol_def(char* string, long int def)
@@ -50,7 +54,7 @@ long int strtol_def(char* string, long int def)
 }
 
 struct comment* parse_comment(char* line){
-    time_t ts = strtol_def(strsep(&line, SPLITTER), -1);
+    time_t ts = parse_ts(strsep(&line, SPLITTER));
     long comment_id = strtol_def(strsep(&line, SPLITTER), -1);
     long user_id = strtol_def(strsep(&line, SPLITTER), -1);
 
@@ -68,13 +72,13 @@ struct comment* parse_comment(char* line){
     return comment_create(ts, comment_id, user_id, content, user, comment_replied, commented_post);
 }
 
-struct comment* parser_next_comment(FILE* file)
+struct comment* parser_next_comment(FILE** file)
 {
     char line[500];
     // Allocation of space for new comment
     struct comment* new_comment;
     // Read one line of the file
-    fgets(line, 500, file);
+    fgets(line, 500, *file);
     if (line == NULL || new_comment==NULL)
         return NULL;
     new_comment = parse_comment(line);
@@ -82,7 +86,8 @@ struct comment* parser_next_comment(FILE* file)
 }
 
 struct post* parse_post(char* line){
-	time_t ts = strtol_def(strsep(&line, SPLITTER), -1);
+	printf("PARSER: line = %s\n", line);
+    time_t ts = parse_ts(strsep(&line, SPLITTER));
 
     long post_id = strtol_def(strsep(&line, SPLITTER),-1);
 
@@ -99,15 +104,19 @@ struct post* parse_post(char* line){
     return post_create(ts, post_id, user_id, content, user);
 }
 
-struct post* parser_next_post(FILE* file)
+struct post* parser_next_post(FILE **file)
 {
     char line[500];
     // Allocation of space for new comment
     struct post* new_post;
     // Read one line of the file
-    fgets(line, 500, file);
-    if (line == NULL || new_post==NULL)
-        return NULL;
+    fgets(line, 500, *file);
+    printf("PARSER: read line from file= %s\n", line);
+    if (line == NULL ){
+    	printf("PARSER: read NULL");
+    	return NULL;
+    }
+
     new_post = parse_post(line);
 
     return new_post;

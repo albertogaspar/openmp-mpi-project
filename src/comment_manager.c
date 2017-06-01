@@ -75,7 +75,7 @@ void comment_manager_run(){
     struct comment* c = NULL;
 
     FILE *file;
-	file = fopen(COMMENT_FILE,"r");
+	file = fopen(COMMENTS_FILE,"r");
 	if(!file)
 	{
 		printf("Error opening file\n");

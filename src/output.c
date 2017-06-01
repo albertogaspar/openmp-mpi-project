@@ -16,7 +16,7 @@ void out_print_best(post* array[], time_t ts) {
 	int i;
 	printf("<%ld", ts);
 	for(i=0; i<NUM_OF_BEST; i++) {
-		if(array[i]->post_id == -1) {
+		if(array[i] == NULL) {
 			printf(" , - , - , - , -");
 		}
 		else {
@@ -32,7 +32,7 @@ bool out_compare_with_best(post *best_three[], post *p){
 
 	int i, j;
 	for(i = 0; i < NUM_OF_BEST; i++) {
-		if( post_compare(*p, *best_three[i]) ) {
+		if( best_three[i]==NULL || post_compare(*p, *best_three[i]) > 0 ) {
 			for(j = NUM_OF_BEST - 2 ; j >= i ; j--) {
 				best_three[j+1] = best_three[j];
 			}

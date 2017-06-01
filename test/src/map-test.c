@@ -1,5 +1,5 @@
-#include "map.h"
-#include "map_iterator.h"
+#include "../../src/map.h"
+#include "../../src/map_iterator.h"
 #include <stdio.h>
 
 int main(int argc, char* argv[]){
@@ -11,12 +11,11 @@ int main(int argc, char* argv[]){
     for(i = 0; i < 10; i++){
         map = map_put(map,9-i,values + i);
     }
-    printf("Iterating\n");
     iterator = map_it_init(map);
     while(map_it_hasnext(map, iterator)){
-        long * k;
+        long k;
         k = map_it_next(map, &iterator);
-        v = map_get(map, *k);
+        v = map_get(map, k);
         printf("%d\n",*v);
     }
     printf("for\n");

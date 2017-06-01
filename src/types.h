@@ -2,6 +2,7 @@
 #define TYPES_H
 
 #include <time.h>
+#include "map.h"
 
 typedef enum { false, true } bool;
 
