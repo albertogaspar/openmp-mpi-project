@@ -10,7 +10,7 @@
 
 
 // res is the container for the date, array_size should be at least 32
-void parser_ts2date(long t, char* res, int array_size)
+/*void parser_ts2date(long t, char* res, int array_size)
 {
         const char *format = default_format;
         struct tm lt;
@@ -39,7 +39,7 @@ time_t parse_ts(char* date)
     t = t * 1000 + atoi(*(tokens+0));
     printf("t=%ld\n",t);
     return t;
-}
+} */
 
 
 long int strtol_def(char* string, long int def)
@@ -50,7 +50,7 @@ long int strtol_def(char* string, long int def)
 }
 
 struct comment* parse_comment(char* line){
-    time_t ts = parse_ts(strsep(&line, SPLITTER));
+    time_t ts = strtol_def(strsep(&line, SPLITTER), -1);
     long comment_id = strtol_def(strsep(&line, SPLITTER), -1);
     long user_id = strtol_def(strsep(&line, SPLITTER), -1);
 
@@ -82,7 +82,7 @@ struct comment* parser_next_comment(FILE* file)
 }
 
 struct post* parse_post(char* line){
-    time_t ts = parse_ts(strsep(&line, SPLITTER));
+	time_t ts = strtol_def(strsep(&line, SPLITTER), -1);
 
     long post_id = strtol_def(strsep(&line, SPLITTER),-1);
 

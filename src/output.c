@@ -1,40 +1,50 @@
 #include "mpi.h"
 #include "utils.h"
-#include "out_manager.h"
+#include "output.h"
 #include <stdio.h>
 #include <stdlib.h>
-#include "serialization.h"
+//#include "serialization.h"
 #include "constants.h"
 #include "types.h"
+#include "post.h"
 
-#define NUM_OF_BEST 3
 
 /* output: <ts, top1_post_id, top1_post_user, top1_post_score, top1_post_commenters, top2_post_id,
  * top2_post_user, top2_post_score, top2_post_commenters, top3_post_id, top3_post_user,
  * top3_post_score, top3_post_commenters> */
-void out_print_tuple(long ts, out_tuple* array ) {
+void out_print_best(post* array[], time_t ts) {
 	int i;
 	printf("<%ld", ts);
 	for(i=0; i<NUM_OF_BEST; i++) {
-		if(array[i].post_id == -1) {
+		if(array[i]->post_id == -1) {
 			printf(" , - , - , - , -");
 		}
 		else {
-			printf(" , %ld , %ld , %d , %d", array[i].post_id, array[i].user_id, array[i].score, array[i].num_commenters);
+			int num_commenters = map_size(array[i]->commenters);
+			printf(" , %ld , %ld , %d , %d", array[i]->post_id, array[i]->user_id, array[i]->score, num_commenters);
 		}
 	}
 	printf(">\n");
 }
 
-int out_tuple_compare(out_tuple first, out_tuple second){
-	if(first.score == second.score && first.ts == second.ts)
-		return (utils_compare_int(first.comment_ts, second.comment_ts));
-	if(first.score == second.score)
-		return (utils_compare_int(first.ts, second.ts));
-	return (utils_compare_int(first.score, second.score));
+
+bool out_compare_with_best(post *best_three[], post *p){
+
+	int i, j;
+	for(i = 0; i < NUM_OF_BEST; i++) {
+		if( post_compare(*p, *best_three[i]) ) {
+			for(j = NUM_OF_BEST - 2 ; j >= i ; j--) {
+				best_three[j+1] = best_three[j];
+			}
+			best_three[i] = p;
+			return true;
+		}
+	}
+	return false;
 }
 
-void copyTuple(out_tuple *dest, out_tuple *src){
+
+/*void copyTuple(out_tuple *dest, out_tuple *src){
 	dest->num_commenters = src->num_commenters;
 	dest->post_id = src->post_id;
 	dest->score = src->score;
@@ -42,14 +52,14 @@ void copyTuple(out_tuple *dest, out_tuple *src){
 	dest->ts = src->ts;
 }
 
-int sort_tuples(out_tuple* array, int n) {
+int sort_tuples(post* array, int n) {
    int i, k, changed;
    changed = 0;
    out_tuple tmp;
 
    for(k=0; k<n-1; k++) {
          for (i=0; i<n-1-k; i++) {
-           if ( out_tuple_compare(array[i], array[i+1]) < 0 ) /* "<" to have decreasing order */
+           if ( out_tuple_compare(array[i], array[i+1]) < 0 ) // "<" to have decreasing order
            {
              copyTuple(&tmp , &array[i]);
              copyTuple(&array[i], &array[i+1]);
@@ -118,7 +128,7 @@ void out_create_tuple(post *p, out_tuple* ot){
 	ot->num_commenters = map_size(p->commenters);
 	ot->score = p-> score;
 }
-/*
+
 int main(int argc, char *argv[]){
 	int i=0;
 	out_tuple best_posts[NUM_OF_BEST + 1];

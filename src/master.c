@@ -2,7 +2,7 @@
 #include "mpi.h"
 #include "post_manager.h"
 #include "comment_manager.h"
-#include "out_manager.h"
+//#include "out_manager.h"
 #include "constants.h"
 #include "types.h"
 
@@ -34,11 +34,12 @@ void master_run(){
 			n_stops++;
 			current_tr.ts = next_tr.ts;
 			current_tr.rank = next_tr.rank;
+			next_tr.ts = -1;
 			MPI_Bcast(&current_tr, 1, MPI_LONG_INT, MASTER, MPI_COMM_WORLD);
 		}
 		else {
 			if(received_ts > current_tr.ts) {
-				if(received_ts > next_tr.ts) {
+				if(received_ts > next_tr.ts && next_tr.ts != -1) {
 					current_tr.ts = next_tr.ts;
 					current_tr.rank = next_tr.rank;
 					next_tr.ts = received_ts;
@@ -51,8 +52,10 @@ void master_run(){
 
 			}
 			else {
-				next_tr.ts = current_tr.ts;
-				next_tr.rank = current_tr.rank;
+				if(next_tr.ts != -1){
+					next_tr.ts = current_tr.ts;
+					next_tr.rank = current_tr.rank;
+				}
 				current_tr.ts = received_ts;
 				current_tr.rank = stat.MPI_SOURCE;
 			}
@@ -79,9 +82,6 @@ int main(int argc, char* argv[]){
             break;
         case COMMENT_MANAGER:
         	comment_manager_run();
-            break;
-        case OUT_MANAGER:
-            out_manager_run();
             break;
         default:
             printf("Rank error! I'm the process with rank %d\n", rank);

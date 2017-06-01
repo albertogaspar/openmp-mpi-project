@@ -8,6 +8,7 @@
 #include "types.h"
 #include "comment_manager.h"
 #include "comment.h"
+#include "parser.h"
 
 /*
  * Set commented_post field to the real post id, if c is a reply to another comment
@@ -20,7 +21,7 @@ void set_commented_post(map_t comments, comment* c) {
 	}
 }
 
-void daily_decrement(map_t comments, map_t posts_to_update,long current_ts) {
+void comment_daily_decrement(map_t comments, map_t posts_to_update,long current_ts) {
     void *iterator = map_it_init(comments);
     long k;
     comment *c;
@@ -105,7 +106,7 @@ void comment_manager_run(){
 		long post_id;
 		post_increment* pi;
 		//calculate 24H decrements and fill posts_to_update list
-		daily_decrement(comments, posts_to_update, current_tr.ts);
+		comment_daily_decrement(comments, posts_to_update, current_tr.ts);
 
 		// Send number of posts that need to be updated
 		count = map_size(posts_to_update) + 1;

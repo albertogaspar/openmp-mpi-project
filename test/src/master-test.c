@@ -14,7 +14,7 @@ void post_manager_run(){
 	// Receive current timestamp from master
 	MPI_Bcast(&current_tr, 1, MPI_LONG_INT, MASTER, MPI_COMM_WORLD);
 	printf("POST_MANAGER: Current ts is: %ld, from process %d\n", current_tr.ts, current_tr.rank);
-	while (ts > current_tr.ts)
+	while (ts > current_tr.ts || current_tr.rank == COMMENT_MANAGER)
 	{
 		//read next timestamp
 		MPI_Bcast(&current_tr, 1, MPI_LONG_INT, MASTER, MPI_COMM_WORLD);
@@ -26,7 +26,7 @@ void post_manager_run(){
 	// Receive current timestamp from master
 	MPI_Bcast(&current_tr, 1, MPI_LONG_INT, MASTER, MPI_COMM_WORLD);
 	printf("POST_MANAGER: Current ts is: %ld, from process %d\n", current_tr.ts, current_tr.rank);
-	while (ts > current_tr.ts)
+	while (ts > current_tr.ts || current_tr.rank == COMMENT_MANAGER)
 	{
 		//read next timestamp
 		MPI_Bcast(&current_tr, 1, MPI_LONG_INT, MASTER, MPI_COMM_WORLD);
@@ -39,7 +39,7 @@ void post_manager_run(){
 	// Receive current timestamp from master
 	MPI_Bcast(&current_tr, 1, MPI_LONG_INT, MASTER, MPI_COMM_WORLD);
 	printf("POST_MANAGER: Current ts is: %ld, from process %d\n", current_tr.ts, current_tr.rank);
-	while (ts > current_tr.ts)
+	while (ts > current_tr.ts || current_tr.rank == COMMENT_MANAGER)
 	{
 		//read next timestamp
 		MPI_Bcast(&current_tr, 1, MPI_LONG_INT, MASTER, MPI_COMM_WORLD);
@@ -48,12 +48,12 @@ void post_manager_run(){
 	}
 
 
-	ts = 8;
+	/*ts = 8;
 	MPI_Send(&ts, 1, MPI_LONG, MASTER, GENERIC_TAG, MPI_COMM_WORLD);
 	// Receive current timestamp from master
 	MPI_Bcast(&current_tr, 1, MPI_LONG_INT, MASTER, MPI_COMM_WORLD);
 	printf("POST_MANAGER: Current ts is: %ld, from process %d\n", current_tr.ts, current_tr.rank);
-	while (ts > current_tr.ts)
+	while (ts > current_tr.ts || current_tr.rank == COMMENT_MANAGER)
 	{
 		//read next timestamp
 		MPI_Bcast(&current_tr, 1, MPI_LONG_INT, MASTER, MPI_COMM_WORLD);
@@ -66,13 +66,13 @@ void post_manager_run(){
 	// Receive current timestamp from master
 	MPI_Bcast(&current_tr, 1, MPI_LONG_INT, MASTER, MPI_COMM_WORLD);
 	printf("POST_MANAGER(after send): Current ts is: %ld, from process %d\n", current_tr.ts, current_tr.rank);
-	while (ts > current_tr.ts)
+	while (ts > current_tr.ts || current_tr.rank == COMMENT_MANAGER)
 	{
 		//read next timestamp
 		MPI_Bcast(&current_tr, 1, MPI_LONG_INT, MASTER, MPI_COMM_WORLD);
 		printf("POST_MANAGER(my ts: %ld> received): Current ts is: %ld, from process %d\n", ts, current_tr.ts, current_tr.rank);
 
-	}
+	}  */
 
 	ts = STOP;
 	printf("POST_MANAGER: sending stop...\n");

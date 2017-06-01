@@ -34,12 +34,12 @@ void post_delete(post* post)
 }
 
 // Print a post
-void post_show(post* post)
+/*void post_show(post* post)
 {
     char date[32];
     parser_ts2date(post->ts, date, sizeof(date));
     printf("%s posted %s on %l \n", post->user, post->content, date);
-}
+}*/
 
 bool post_update_score(post* p, int delta, bool is_daily_decrement){
     p->score = p->score + delta;
@@ -55,4 +55,12 @@ bool post_update_score(post* p, int delta, bool is_daily_decrement){
 void post_add_comments_info(post* post, long user_id, time_t last_comment_ts){
 	map_put(post->commenters, user_id, last_comment_ts);
     post->last_comment_ts = last_comment_ts;
+}
+
+int post_compare(post first, post second){
+	if(first.score == second.score && first.ts == second.ts)
+		return (utils_compare_int(first.last_comment_ts, second.last_comment_ts));
+	if(first.score == second.score)
+		return (utils_compare_int(first.ts, second.ts));
+	return (utils_compare_int(first.score, second.score));
 }

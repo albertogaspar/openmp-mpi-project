@@ -42,9 +42,9 @@ bool comment_update_score(comment* c, int delta, bool is_daily_decrement){
 }
 
 // Print a post
-void comment_show(comment* comment)
+/*void comment_show(comment* comment)
 {
     char date[32];
     //parser_ts2date(comment->ts/1000, date, sizeof(date));
     //printf(" %s commented %s on %s \n", comment->user, comment->content, date);
-}
+}*/
