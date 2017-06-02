@@ -3,7 +3,10 @@
 #include "map.h"
 #include "parser.h"
 #include "constants.h"
+#include "types.h"
 #include <stdlib.h>
+#include <stdio.h>
+#include <time.h>
 
 
 // Create a new post
@@ -11,6 +14,7 @@ post* post_create(long ts, long post_id, long user_id, char* content, char* user
 {
     post* new_post = (post*) malloc(sizeof(post));
     if (new_post==NULL){
+    	printf("POST IS NULL\n");
         return NULL;
     }
     new_post->ts = ts;
@@ -21,7 +25,7 @@ post* post_create(long ts, long post_id, long user_id, char* content, char* user
     new_post->score = STARTING_SCORE;
     new_post->num_of_dec = 0;
     new_post->last_comment_ts = -1;
-    map_init( new_post->commenters);
+    new_post->commenters = map_init();
 
     return new_post;
 }
@@ -29,8 +33,10 @@ post* post_create(long ts, long post_id, long user_id, char* content, char* user
 // Delete a post
 void post_delete(post* post)
 {
-    free(post->content);
+	printf("POST: deleting %s # %s\n", post->content, post->user);
     free(post->user);
+    printf("POST: post content deleted, now deleting %s\n", post->content);
+    free(post->content);
     post->commenters = map_empty(post->commenters);
     free(post);
 }
@@ -44,6 +50,7 @@ void post_delete(post* post)
 }*/
 
 bool post_update_score(post* p, int delta, bool is_daily_decrement){
+
     p->score = p->score + delta;
     if (is_daily_decrement){
         p->num_of_dec = p->num_of_dec - delta;
@@ -51,6 +58,7 @@ bool post_update_score(post* p, int delta, bool is_daily_decrement){
     if(p->score<=0) {
         return false;
     }
+    printf("POST: new score = %d\n", p->score);
     return true;
 }
 

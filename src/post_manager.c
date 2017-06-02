@@ -19,48 +19,60 @@ void delete_inactive_posts(map_t posts_to_delete, map_t posts) {
 	post *p;
 	while(map_it_hasnext(posts_to_delete, iterator)){
 	        k = map_it_next(posts_to_delete, &iterator);
+	        printf("POST MANAGER: deleting post %ld ...\n", k);
 	        p = map_get(posts_to_delete, k);
+	        printf("POST MANAGER: map size = %d\n", map_size(posts));
 	        posts = map_remove(posts, k);
+	        printf("POST MANAGER: map size = %d\n", map_size(posts));
 	        post_delete(p);
+	        printf("POST MANAGER: post %ld deleted\n", k);
 	}
-	map_empty(posts_to_delete);
+	posts_to_delete = map_empty(posts_to_delete);
 
 }
 
-void daily_decrement(map_t posts, long current_ts) {
+void daily_decrement(map_t posts, long current_ts, post* best_three[]) {
     void *iterator = map_it_init(posts);
     long k;
     post *p;
-    bool order_changed = false;
+    bool order_changed = false, is_daily_decrement = true;
     map_t posts_to_delete = map_init();
-    post *best_three[NUM_OF_BEST] = {NULL, NULL, NULL};
+
     //MPI_Datatype MPI_out_tuple = serialize_out_tuple();
 
     printf("POST MANAGER: daily decrement started\n");
     while(map_it_hasnext(posts, iterator)){
-        k = map_it_next(posts, &iterator);
+    	long lifetime, num_of_dec, pod = PERIOD_OF_DECR;
+    	int delta;
+    	k = map_it_next(posts, &iterator);
         printf("POST_ITERATOR: next=%ld\n", k);
 
         p = map_get(posts, k);
+
     	//time elapsed since last decrement
-		long lifetime = current_ts - p->ts;
+		lifetime = current_ts - p->ts;
+		printf("lifetime= %ld\n", lifetime/(1000*3600));
 		//correct number of decrements
-		long num_of_dec = lifetime % PERIOD_OF_DECR;
+		num_of_dec = lifetime / pod;
 		//num of points to be subtracted to the score
-		long delta = num_of_dec - p->num_of_dec;
+		delta = (int) (num_of_dec - p->num_of_dec) * (-1);
 
         if(delta != 0){
 
-        	printf("POST MANAGER: post %ld is gonna be decremented by %ld\n", p->post_id, delta);
-            bool is_active = post_update_score(p, delta, false);
+        	bool is_active;
+        	printf("POST MANAGER: post %ld is gonna be incremented by %d\n", p->post_id, delta);
+            is_active = post_update_score(p, delta, is_daily_decrement);
+            printf("POST MANAGER: post %ld is active? %d\n", p->post_id, is_active);
             if(!is_active){
             	posts_to_delete = map_put(posts_to_delete, k, p);
             }
 
         }
-        order_changed = out_compare_with_best(best_three, p);
+        if(out_compare_with_best(best_three, p))
+        	order_changed = true;
     }
     //delete of the inactive posts
+    printf("POST MANAGER: I have to delete %d posts\n", map_size(posts_to_delete));
     delete_inactive_posts(posts_to_delete, posts);
     //print the best 3
     if(order_changed) {
@@ -119,6 +131,7 @@ void post_manager_run(){
     MPI_Status stat;
     map_t posts = map_init();
     struct post* p = NULL;
+    post *best_three[NUM_OF_BEST] = {NULL, NULL, NULL};
     //MPI_Datatype MPI_out_tuple = serialize_out_tuple();
 
     FILE *file;
@@ -175,15 +188,15 @@ void post_manager_run(){
                 }
 
             }
-            // Update score of posts (24h decrement)
-            daily_decrement(posts, current_tr.ts);
+            // Update score of posts (24h decrement) and the best three
+            daily_decrement(posts, current_tr.ts, best_three);
 
             //read next timestamp
             MPI_Bcast(&current_tr, 1, MPI_LONG_INT, MASTER, MPI_COMM_WORLD);
 
 
         }
-        daily_decrement(posts, current_tr.ts);
+        daily_decrement(posts, current_tr.ts, best_three);
     }
     fclose(file);
 }

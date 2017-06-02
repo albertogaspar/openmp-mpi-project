@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <stdio.h>
 #include "map.h"
 #include "map_iterator.h"
 
@@ -22,21 +23,26 @@ map_t map_remove(map_t map, long key){
         return NULL;
     if(map->key == key){
         map_t temp = map->next;
+        if (map == NULL)
+            	printf("MAP: trying to remove item with key %ld, but it is NULL\n", key);
         free(map);
         return temp;
     }
-    map = map_remove(map->next, key);
+    map->next = map_remove(map->next, key);
     return map;
 
 }
 
 map_t map_empty(map_t map){
-    void* it = map_it_init(map);
-    while(map_it_hasnext(map, it)){
-        long key = map_it_next(map, &it);
-        map = map_remove(map, key);
+    if(map == NULL)
+    	return map;
+    if(map->next != NULL){
+    	map->next = map_empty(map->next);
     }
-    return map;
+    if (map == NULL)
+    	printf("MAP: trying to empty map, but it is NULL\n");
+    free(map);
+    return NULL;
 }
 
 

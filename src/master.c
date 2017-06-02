@@ -40,6 +40,7 @@ void master_run(){
 		else {
 			if(received_ts > current_tr.ts) {
 				if(received_ts > next_tr.ts && next_tr.ts != -1) {
+					printf("\n\nMASTER: WROOOOOOOOOOOOOOOOOOOOOONG comparison, next ts = %ld!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n\n", next_tr.ts);
 					current_tr.ts = next_tr.ts;
 					current_tr.rank = next_tr.rank;
 					next_tr.ts = received_ts;
@@ -53,12 +54,14 @@ void master_run(){
 			}
 			else {
 				if(next_tr.ts != -1){
+					printf("\n\nMASTER: WROOOOOOOOOOOOOOOOOOOOOONG comparison, next is -1 ts = %ld!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n\n", next_tr.ts);
 					next_tr.ts = current_tr.ts;
 					next_tr.rank = current_tr.rank;
 				}
 				current_tr.ts = received_ts;
 				current_tr.rank = stat.MPI_SOURCE;
 			}
+			printf("\n\nMASTER: received = %ld , sending ts = %ld, next = %ld\n\n", received_ts, current_tr.ts, next_tr.ts);
 			MPI_Bcast(&current_tr, 1, MPI_LONG_INT, MASTER, MPI_COMM_WORLD);
 
 		}

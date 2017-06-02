@@ -31,8 +31,15 @@ void out_print_best(post* array[], time_t ts) {
 bool out_compare_with_best(post *best_three[], post *p){
 
 	int i, j;
+	int compare;
 	for(i = 0; i < NUM_OF_BEST; i++) {
-		if( best_three[i]==NULL || post_compare(*p, *best_three[i]) > 0 ) {
+		//if p is already in the best three skip the comparison
+		if( best_three[i] != NULL && p->post_id==best_three[i]->post_id ){
+			return false;
+		}
+		if( best_three[i]==NULL || (compare = post_compare(*p, *best_three[i])) > 0 ) {
+			if(best_three[i]!=NULL)
+				printf("OUTPUT: comparison between post %ld and %ld result %d\n", p->post_id, best_three[i]->post_id, compare);
 			for(j = NUM_OF_BEST - 2 ; j >= i ; j--) {
 				best_three[j+1] = best_three[j];
 			}

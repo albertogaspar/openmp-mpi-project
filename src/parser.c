@@ -96,10 +96,12 @@ struct post* parse_post(char* line){
     char* p = strsep(&line, SPLITTER);
     char* content = (char*) malloc(strlen(p)*sizeof(char));
     strcpy(content, p);
+    printf("PARSER: content = %s\n", content);
 
-    char* us = strsep(&line, SPLITTER);
+    char* us = strsep(&line, "\n");
     char* user = (char*) malloc(strlen(us)*sizeof(char));
     strcpy(user, us);
+    printf("PARSER: user = %s\n", user);
 
     return post_create(ts, post_id, user_id, content, user);
 }
