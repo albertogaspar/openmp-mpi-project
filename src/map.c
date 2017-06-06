@@ -24,7 +24,7 @@ map_t map_remove(map_t map, long key){
     if(map->key == key){
         map_t temp = map->next;
         if (map == NULL)
-            	printf("MAP: trying to remove item with key %ld, but it is NULL\n", key);
+            	printf("MAP: *****************************trying to remove item with key %ld, but it is NULL***********************\n", key);
         free(map);
         return temp;
     }
@@ -40,7 +40,7 @@ map_t map_empty(map_t map){
     	map->next = map_empty(map->next);
     }
     if (map == NULL)
-    	printf("MAP: trying to empty map, but it is NULL\n");
+    	printf("MAP: ******************************trying to empty map, but it is NULL **********************************\n");
     free(map);
     return NULL;
 }

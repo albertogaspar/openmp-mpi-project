@@ -35,6 +35,8 @@ time_t parse_ts(char* date)
     char* tokens = strsep(&date, ".");
 
     strptime(tokens,"%Y-%m-%dT%H:%M:%S",&mytm);
+    mytm.tm_isdst = 0;
+
     tokens = strsep(&date, "+");
 
     t = mktime(&mytm);
@@ -54,20 +56,21 @@ long int strtol_def(char* string, long int def)
 }
 
 struct comment* parse_comment(char* line){
+	printf("COMMENT_PARSER: line = %s\n", line);
     time_t ts = parse_ts(strsep(&line, SPLITTER));
     long comment_id = strtol_def(strsep(&line, SPLITTER), -1);
     long user_id = strtol_def(strsep(&line, SPLITTER), -1);
 
     char* com = strsep(&line, SPLITTER);
-    char* content = (char*) malloc(strlen(com)*sizeof(char));
+    char* content = (char*) malloc((strlen(com)+1)*sizeof(char));
     strcpy(content, com);
 
     char* us = strsep(&line, SPLITTER);
-    char* user = (char*) malloc(strlen(us)*sizeof(char));
+    char* user = (char*) malloc((strlen(us)+1)*sizeof(char));
     strcpy(user, us);
 
     long comment_replied = strtol_def(strsep(&line, SPLITTER), -1);
-    long commented_post = strtol_def(strsep(&line, SPLITTER), -1);
+    long commented_post = strtol_def(strsep(&line, "\n"), -1);
 
     return comment_create(ts, comment_id, user_id, content, user, comment_replied, commented_post);
 }
@@ -78,15 +81,17 @@ struct comment* parser_next_comment(FILE** file)
     // Allocation of space for new comment
     struct comment* new_comment;
     // Read one line of the file
-    fgets(line, 500, *file);
-    if (line == NULL || new_comment==NULL)
-        return NULL;
+    char* s = fgets(line, 500, *file);
+    if (s == NULL){
+		printf("PARSER: read NULL\n");
+		return NULL;
+	}
     new_comment = parse_comment(line);
     return new_comment;
 }
 
 struct post* parse_post(char* line){
-	printf("PARSER: line = %s\n", line);
+	printf("POST_PARSER: line = %s\n", line);
     time_t ts = parse_ts(strsep(&line, SPLITTER));
 
     long post_id = strtol_def(strsep(&line, SPLITTER),-1);
@@ -94,12 +99,12 @@ struct post* parse_post(char* line){
     long user_id = strtol_def(strsep(&line, SPLITTER),-1);
 
     char* p = strsep(&line, SPLITTER);
-    char* content = (char*) malloc(strlen(p)*sizeof(char));
+    char* content = (char*) malloc((strlen(p)+1)*sizeof(char));
     strcpy(content, p);
     printf("PARSER: content = %s\n", content);
 
     char* us = strsep(&line, "\n");
-    char* user = (char*) malloc(strlen(us)*sizeof(char));
+    char* user = (char*) malloc((strlen(us)+1)*sizeof(char));
     strcpy(user, us);
     printf("PARSER: user = %s\n", user);
 
@@ -112,12 +117,12 @@ struct post* parser_next_post(FILE **file)
     // Allocation of space for new comment
     struct post* new_post;
     // Read one line of the file
-    fgets(line, 500, *file);
-    printf("PARSER: read line from file= %s\n", line);
-    if (line == NULL ){
-    	printf("PARSER: read NULL");
-    	return NULL;
-    }
+    char* s = fgets(line, 500, *file);
+
+	if (s == NULL){
+		printf("PARSER: read NULL\n");
+		return NULL;
+	}
 
     new_post = parse_post(line);
 

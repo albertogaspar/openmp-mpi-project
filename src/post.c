@@ -7,12 +7,13 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <time.h>
+#include <unistd.h>
 
 
 // Create a new post
 post* post_create(long ts, long post_id, long user_id, char* content, char* user)
 {
-    post* new_post = (post*) malloc(sizeof(post));
+	post* new_post = (post*) malloc(sizeof(post));
     if (new_post==NULL){
     	printf("POST IS NULL\n");
         return NULL;
@@ -33,11 +34,19 @@ post* post_create(long ts, long post_id, long user_id, char* content, char* user
 // Delete a post
 void post_delete(post* post)
 {
+	if(post->user == NULL) {
+	    	printf("POST: ***************NULL USER***************************************************************\n");
+	}
 	printf("POST: deleting %s # %s\n", post->content, post->user);
     free(post->user);
-    printf("POST: post content deleted, now deleting %s\n", post->content);
+    if(post->content == NULL) {
+        	printf("POST: ***************NULL CONTENT ***************************************************************\n");
+    }
     free(post->content);
     post->commenters = map_empty(post->commenters);
+    if(post == NULL) {
+    	printf("POST: ***************NULL POST ***************************************************************\n");
+    }
     free(post);
 }
 

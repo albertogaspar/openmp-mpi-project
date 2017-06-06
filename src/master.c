@@ -38,8 +38,8 @@ void master_run(){
 			MPI_Bcast(&current_tr, 1, MPI_LONG_INT, MASTER, MPI_COMM_WORLD);
 		}
 		else {
-			if(received_ts > current_tr.ts) {
-				if(received_ts > next_tr.ts && next_tr.ts != -1) {
+			if(received_ts >= current_tr.ts) {
+				if(received_ts >= next_tr.ts && next_tr.ts != -1) {
 					printf("\n\nMASTER: WROOOOOOOOOOOOOOOOOOOOOONG comparison, next ts = %ld!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n\n", next_tr.ts);
 					current_tr.ts = next_tr.ts;
 					current_tr.rank = next_tr.rank;
@@ -75,6 +75,7 @@ int main(int argc, char* argv[]){
     MPI_Init(&argc, &argv);
     MPI_Comm_rank(MPI_COMM_WORLD, (int *)&rank);
 
+    printf("Started\n");
     switch (rank)
     {
         case MASTER:

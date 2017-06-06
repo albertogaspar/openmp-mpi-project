@@ -7,14 +7,14 @@
 #include "../../src/types.h"
 
 void comment_manager_run(){
-	time_t ts = LONG_MAX;
+	time_t ts = LONG_MAX, stop_time = STOP;
 	ts_rank current_tr;
 
 	MPI_Send(&ts, 1, MPI_LONG, MASTER, GENERIC_TAG, MPI_COMM_WORLD);
-	while(1)
+	while(current_tr.ts != ts)
 		MPI_Bcast(&current_tr, 1, MPI_LONG_INT, MASTER, MPI_COMM_WORLD);
 
-
+	MPI_Send(&stop_time, 1, MPI_LONG, MASTER, GENERIC_TAG, MPI_COMM_WORLD);
 	printf("COMMENT MANAGER: STOP sent\n");
 
 }

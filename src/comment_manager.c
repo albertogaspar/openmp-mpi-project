@@ -79,9 +79,9 @@ void comment_manager_run(){
 	if(!file)
 	{
 		printf("Error opening file\n");
-		exit(-1);
+		return;
 	}
-    while(c = parser_next_comment(file)) {
+    while(c = parser_next_comment(&file)) {
 
     	//get the commented post
     	set_commented_post(comments, c);

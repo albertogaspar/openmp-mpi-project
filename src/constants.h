@@ -12,7 +12,7 @@
 #define PERIOD_OF_DECR 24 * 3600 * 1000
 
 #define COMMENTS_FILE "resources/comments.dat"
-#define POSTS_FILE "resources/posts.dat"
+#define POSTS_FILE "resources/posts-tiny.dat"
 
 static const time_t default_time = 1230728833;
 static const char default_format[] = "%b %d %Y";
