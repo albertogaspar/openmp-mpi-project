@@ -116,9 +116,10 @@ void parallel_daily_decrement(map_t posts, long current_ts, post* best_three[]) 
     post *p;
     bool order_changed = false, is_daily_decrement = true;
     map_t posts_to_delete = map_init();
-    #pragma omp parallel shared (posts, inactive_post_exists, &posts_to_delete)
+    #pragma omp parallel shared (posts, order_changed, posts_to_delete) num_threads(4)
     {
-        // one thread adds all taks to the queue
+        // one thread adds all tasks to the queue
+    	printf("Num of threads: %d\n", omp_get_num_threads());
         #pragma omp single
             while(map_it_hasnext(posts, iterator)){
                 k = map_it_next(posts, &iterator);
@@ -146,7 +147,8 @@ void post_manager_run(){
     map_t posts = map_init();
     struct post* p = NULL;
     post *best_three[NUM_OF_BEST] = {NULL, NULL, NULL};
-    //MPI_Datatype MPI_out_tuple = serialize_out_tuple();
+    post_increment pi;
+
 
     FILE *file;
     file = fopen(POSTS_FILE, "r");
@@ -172,45 +174,41 @@ void post_manager_run(){
 
         	printf("POST_MANAGER: waiting for comments updates\n");
             // Wait for points coming from comments -> gets number of posts to update
-            MPI_Recv(&count, 1, MPI_LONG, COMMENT_MANAGER, GENERIC_TAG, MPI_COMM_WORLD, &stat);
+            MPI_Recv(&count, 1, MPI_INT, COMMENT_MANAGER, GENERIC_TAG, MPI_COMM_WORLD, &stat);
             // gets the pairs (post_id, delta_points)
             for(i=0; i<count; i++){
             	//distinguish pair by tag
-            	int increment;
-                long post_id, commenter_id = -1;
+                long commenter_id = -1;
 
-                MPI_Recv(&post_id, 1, MPI_LONG, COMMENT_MANAGER, MPI_ANY_TAG, MPI_COMM_WORLD, &stat);
+                MPI_Recv(&pi, 1, MPI_LONG_INT, COMMENT_MANAGER, MPI_ANY_TAG, MPI_COMM_WORLD, &stat);
 
-                post* post = map_get(posts, post_id);
+                post* post = map_get(posts, pi.post_id);
                 if(stat.MPI_TAG == NEW_COMMENT_UPDATE) {
 
                 	MPI_Recv(&commenter_id, 1, MPI_LONG, COMMENT_MANAGER, MPI_ANY_TAG, MPI_COMM_WORLD, &stat);
 
-                    increment = STARTING_SCORE;
                     //since we update the global timestamp only when a comment or a post is read
                     //and post_manager is waiting, current_ts is the timestamp of the comment we are receiving
                 	post_add_comments_info(post, commenter_id, current_tr.ts);
                 }
-                else {
-                	increment = DAILY_DECREMENT;
-                }
+
                 //since these update aren't due to post own daily drecrement, is_daily_decrement is false in both cases
-                bool is_active = post_update_score(post, increment, false);
+                bool is_active = post_update_score(post, pi.increment, false);
                 if(!is_active){
-                    posts = map_remove(posts, post_id);
+                    posts = map_remove(posts, pi.post_id);
                     post_delete(post);
                 }
 
             }
             // Update score of posts (24h decrement) and the best three
-            parallel_daily_decrement(posts, current_tr.ts, best_three);
+            daily_decrement(posts, current_tr.ts, best_three);
 
             //read next timestamp
             MPI_Bcast(&current_tr, 1, MPI_LONG_INT, MASTER, MPI_COMM_WORLD);
 
 
         }
-        parallel_daily_decrement(posts, current_tr.ts, best_three);
+        daily_decrement(posts, current_tr.ts, best_three);
     }
     fclose(file);
     printf("POST_MANAGER: Sending stop to master\n");

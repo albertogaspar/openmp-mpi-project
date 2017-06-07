@@ -75,7 +75,7 @@ int main(int argc, char* argv[]){
     MPI_Init(&argc, &argv);
     MPI_Comm_rank(MPI_COMM_WORLD, (int *)&rank);
 
-    printf("Started\n");
+    printf("Process %d started\n", rank);
     switch (rank)
     {
         case MASTER:

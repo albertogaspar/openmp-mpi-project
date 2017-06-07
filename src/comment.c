@@ -12,6 +12,7 @@ comment* comment_create(time_t ts, long comment_id, long user_id, char* content,
     struct comment* new_comment;
     new_comment = (struct comment*) malloc(sizeof(struct comment));
     if (new_comment == NULL){
+    	printf("COMMENT IS NULL\n");
         return NULL;
     }
     new_comment->ts = ts;
@@ -30,6 +31,8 @@ comment* comment_create(time_t ts, long comment_id, long user_id, char* content,
 // Delete a post
 void comment_delete(comment* comment)
 {
+	free(comment->content);
+	free(comment->user);
     free(comment);
 }
 
@@ -37,6 +40,9 @@ bool comment_update_score(comment* c, int delta, bool is_daily_decrement){
     c->score = c->score + delta;
     if (is_daily_decrement){
         c->num_of_dec = c->num_of_dec - delta;
+    }
+    if(c->score<=0) {
+          return false;
     }
 	return true;
 }

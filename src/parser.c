@@ -70,18 +70,21 @@ struct comment* parse_comment(char* line){
     strcpy(user, us);
 
     long comment_replied = strtol_def(strsep(&line, SPLITTER), -1);
+    printf("PARSER: Comment replied = %ld\n", comment_replied);
     long commented_post = strtol_def(strsep(&line, "\n"), -1);
+    printf("PARSER: Commented post = %ld\n", commented_post);
+
 
     return comment_create(ts, comment_id, user_id, content, user, comment_replied, commented_post);
 }
 
 struct comment* parser_next_comment(FILE** file)
 {
-    char line[500];
+    char line[2000];
     // Allocation of space for new comment
     struct comment* new_comment;
     // Read one line of the file
-    char* s = fgets(line, 500, *file);
+    char* s = fgets(line, 2000, *file);
     if (s == NULL){
 		printf("PARSER: read NULL\n");
 		return NULL;
