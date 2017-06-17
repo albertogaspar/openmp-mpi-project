@@ -92,7 +92,7 @@ void comment_daily_decrement(map_t comments, map_t posts_to_update,long current_
 
 
 
-void comment_manager_run(){
+void comment_manager_run(char *path){
 	time_t stop_time = STOP;
     int count;
     ts_rank current_tr;
@@ -103,7 +103,11 @@ void comment_manager_run(){
     post_increment pi;
 
     FILE *file;
-	file = fopen(COMMENTS_FILE,"r");
+    if(path[0]!='\0')
+    	file = fopen(path,"r");
+	else
+		file = stdin;
+
 	if(!file)
 	{
 		printf("Error opening file\n");

@@ -1,12 +1,18 @@
 #ifndef PARSER_H
 #define PARSER_H
+
+#define __USE_XOPEN
+#define _XOPEN_SOURCE
+#include <stdio.h>
+#include <time.h>
 #include "post.h"
 #include "comment.h"
-#include <stdio.h>
+
+
 
 
 // From (long) timestamp to (char) date formatted as MMM dd YYYY
-void parser_ts2date(long t, char* res, int array_size);
+void parser_ts2date(time_t t, char* res, int array_size);
 
 time_t parser_parse_ts(char* date);
 

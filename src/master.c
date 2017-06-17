@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <string.h>
 #include "mpi.h"
 #include "post_manager.h"
 #include "comment_manager.h"
@@ -40,7 +41,6 @@ void master_run(){
 		else {
 			if(received_ts >= current_tr.ts) {
 				if(received_ts >= next_tr.ts && next_tr.ts != -1) {
-					printf("\n\nMASTER: WROOOOOOOOOOOOOOOOOOOOOONG comparison, next ts = %ld!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n\n", next_tr.ts);
 					current_tr.ts = next_tr.ts;
 					current_tr.rank = next_tr.rank;
 					next_tr.ts = received_ts;
@@ -54,7 +54,6 @@ void master_run(){
 			}
 			else {
 				if(next_tr.ts != -1){
-					printf("\n\nMASTER: WROOOOOOOOOOOOOOOOOOOOOONG comparison, next is -1 ts = %ld!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n\n", next_tr.ts);
 					next_tr.ts = current_tr.ts;
 					next_tr.rank = current_tr.rank;
 				}
@@ -71,7 +70,12 @@ void master_run(){
 int main(int argc, char* argv[]){
     process_t rank;
     int size;
+    char comment_file[100] = "", post_file[100] = "";
 
+    if(argc>=2){
+    	strcpy(post_file, argv[1]);
+    	strcpy(comment_file, argv[2]);
+    }
     MPI_Init(&argc, &argv);
     MPI_Comm_rank(MPI_COMM_WORLD, (int *)&rank);
 
@@ -82,10 +86,10 @@ int main(int argc, char* argv[]){
         	master_run();
             break;
         case POST_MANAGER:
-            post_manager_run();
+            post_manager_run(post_file);
             break;
         case COMMENT_MANAGER:
-        	comment_manager_run();
+        	comment_manager_run(comment_file);
             break;
         default:
             printf("Rank error! I'm the process with rank %d\n", rank);

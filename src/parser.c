@@ -1,30 +1,34 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <time.h>
 #include "post.h"
 #include "comment.h"
 #include "constants.h"
 
 #define LIST_MAX 10
 #define SPLITTER "|"
-#define _XOPEN_SOURCE
 
 // res is the container for the date, array_size should be at least 32
-/*void parser_ts2date(long t, char* res, int array_size)
+void parser_ts2date(time_t t, char* res, int array_size)
 {
         const char *format = default_format;
         struct tm lt;
+        char ms[10];
+        sprintf(ms, ".%ld+0000", t%1000);
+        t = t/1000;
         localtime_r(&t, &lt);
         if (strftime(res, array_size, format, &lt) == 0) {
                 (void) fprintf(stderr,  "strftime(3): cannot format supplied "
                                         "date/time into buffer of size %u "
                                         "using: '%s'\n",
                                         array_size, format);
-                return NULL;
+                strcpy(res, "Error");
+                return;
         }
-        printf("%u -> '%s'\n", (unsigned) t, res);
-} */
+        strcat(res, ms);
+
+        printf("OUTPUT_PARSER:%u -> '%s'\n", (unsigned) t, res);
+}
 
 time_t parse_ts(char* date)
 {
@@ -131,62 +135,3 @@ struct post* parser_next_post(FILE **file)
 
     return new_post;
 }
-//
-// int main(int argc, char *argv[])
-// {
-//     struct comment* comments[LIST_MAX];
-//     int count = 0;
-//     int i = 0;
-//
-//     FILE *file;
-//     file = fopen(COMMENT_FILE,"r");
-//     if(!file)
-//     {
-//         perror("Error opening file");
-//         return -1;
-//     }
-//
-//     //Initialize the array
-//     char str[500];
-//     //memset(comments, 0, sizeof(comments));
-//     while(fgets(str, 500, (FILE*) file)              /* Check for the end of file*/
-//         &&(count < LIST_MAX)) /* To avoid memory corruption */
-//     {
-//         printf("%d\n", count);
-//         printf("%s\n", str);
-//
-//         struct comment* new_comment;
-//         new_comment = (struct comment*) malloc(sizeof(struct comment));
-//         if (new_comment==NULL){
-//             return NULL;
-//         }
-//         parse_comment(new_comment, str);
-//         //init_comment(new_comment);
-//         comments[count] = new_comment;
-//         printf("TS:%ld , CID: %ld, UID: %ld, C: %s, U: %s, CR: %ld, PC: %ld, S: %d \n\n", comments[count]->ts, comments[count]->comment_id,
-//         comments[count]->user_id,comments[count]->comment,comments[count]->user,comments[count]->comment_replied,
-//         comments[count]->post_commented,comments[count]->score);
-//         if (comments[count] == NULL)
-//         {
-//                 printf("Comment not correctly allocated\n" );
-//                 return 0;
-//         }
-//         count++;
-//     }
-//     i=0;
-//     printf("TS:%ld , CID: %ld, UID: %ld, C: %s, U: %s, CR: %ld, PC: %ld, S: %d \n\n", comments[i]->ts, comments[i]->comment_id,
-//     comments[i]->user_id,comments[i]->comment,comments[i]->user,comments[i]->comment_replied,
-//     comments[i]->post_commented,comments[i]->score);
-//
-//     /* Print the list */
-//     printf("comments count: %d\n", count);
-//     for(i = 0; i < count; i++)
-//     {
-//         printf("TS:%ld , CID: %ld, UID: %ld, C: %s, U: %s, CR: %ld, PC: %ld, S: %d \n\n", comments[i]->ts, comments[i]->comment_id,
-//         comments[i]->user_id,comments[i]->comment,comments[i]->user,comments[i]->comment_replied,
-//         comments[i]->post_commented,comments[i]->score);
-//         show_comment(comments[i]);
-//     }
-//     fclose(file);
-//     return 0;
-// }

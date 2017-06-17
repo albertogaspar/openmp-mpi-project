@@ -7,24 +7,27 @@
 #include "constants.h"
 #include "types.h"
 #include "post.h"
+#include "parser.h"
 
 
 /* output: <ts, top1_post_id, top1_post_user, top1_post_score, top1_post_commenters, top2_post_id,
  * top2_post_user, top2_post_score, top2_post_commenters, top3_post_id, top3_post_user,
  * top3_post_score, top3_post_commenters> */
-void out_print_best(post* array[], time_t ts) {
+void out_print_best(post* array[], time_t ts, FILE** file) {
 	int i;
-	printf("<%ld", ts);
+	char date[32];
+	parser_ts2date(ts, date, sizeof(date));
+	fprintf(*file, "%s", date);
 	for(i=0; i<NUM_OF_BEST; i++) {
 		if(array[i] == NULL) {
-			printf(" , - , - , - , -");
+			fprintf(*file, " , - , - , - , -");
 		}
 		else {
 			int num_commenters = map_size(array[i]->commenters);
-			printf(" , %ld , %ld , %d , %d", array[i]->post_id, array[i]->user_id, array[i]->score, num_commenters);
+			fprintf(*file, " , %ld , %ld , %d , %d", array[i]->post_id, array[i]->user_id, array[i]->score, num_commenters);
 		}
 	}
-	printf(">\n");
+	fprintf(*file, "\n");
 }
 
 

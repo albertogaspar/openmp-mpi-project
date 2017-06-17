@@ -29,7 +29,7 @@ void delete_inactive_posts(map_t posts_to_delete, map_t posts) {
 
 }
 
-void daily_decrement(map_t posts, long current_ts, post* best_three[]) {
+void daily_decrement(map_t posts, long current_ts, post* best_three[], FILE** output) {
     void *iterator = map_it_init(posts);
     long k;
     post *p;
@@ -74,7 +74,7 @@ void daily_decrement(map_t posts, long current_ts, post* best_three[]) {
     delete_inactive_posts(posts_to_delete, posts);
     //print the best 3
     if(order_changed) {
-    	out_print_best(best_three, current_ts);
+    	out_print_best(best_three, current_ts, output);
     }
 
 }
@@ -110,7 +110,7 @@ void process_post (struct post *p, long current_ts, map_t *posts_to_delete, post
 }
 
 
-void parallel_daily_decrement(map_t posts, long current_ts, post* best_three[]) {
+void parallel_daily_decrement(map_t posts, long current_ts, post* best_three[], FILE** output) {
     void *iterator = map_it_init(posts);
     long k;
     post *p;
@@ -135,11 +135,11 @@ void parallel_daily_decrement(map_t posts, long current_ts, post* best_three[]) 
 	delete_inactive_posts(posts_to_delete, posts);
 	//print the best 3
 	if(order_changed) {
-		out_print_best(best_three, current_ts);
+		out_print_best(best_three, current_ts, output);
 	}
 }
 
-void post_manager_run(){
+void post_manager_run(char *path){
 	time_t stop_time = STOP;
     int count, i=0;
     ts_rank current_tr;
@@ -150,15 +150,24 @@ void post_manager_run(){
     post_increment pi;
 
 
-    FILE *file;
-    file = fopen(POSTS_FILE, "r");
-    if(!file) {
+    FILE *input, *output;
+    if(path[0]!='\0')
+    	input = fopen(path, "r");
+    else
+    	input = stdin;
+    if(!input) {
     		 printf("file: %s\n" , POSTS_FILE);
              perror("Error opening file");
              return;
     }
+    output = fopen(OUTPUT_FILE, "wb");
+    if(!output) {
+			 printf("file: %s\n" , OUTPUT_FILE);
+			 perror("Error opening file");
+			 return;
+	}
 
-    while(p = parser_next_post(&file)) {
+    while(p = parser_next_post(&input)) {
     	printf("POST_MANAGER: Post read: %ld, %ld\n", p->post_id, p->ts);
         posts = map_put(posts, p->post_id, p);
         printf("POST_MANAGER: Map size= %d\n", map_size(posts));
@@ -201,16 +210,16 @@ void post_manager_run(){
 
             }
             // Update score of posts (24h decrement) and the best three
-            daily_decrement(posts, current_tr.ts, best_three);
+            daily_decrement(posts, current_tr.ts, best_three, &output);
 
             //read next timestamp
             MPI_Bcast(&current_tr, 1, MPI_LONG_INT, MASTER, MPI_COMM_WORLD);
 
 
         }
-        daily_decrement(posts, current_tr.ts, best_three);
+        daily_decrement(posts, current_tr.ts, best_three, &output);
     }
-    fclose(file);
+    fclose(input);
     printf("POST_MANAGER: Sending stop to master\n");
     MPI_Send(&stop_time, 1, MPI_LONG, MASTER, GENERIC_TAG, MPI_COMM_WORLD);
 }
