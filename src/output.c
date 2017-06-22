@@ -28,6 +28,7 @@ void out_print_best(post* array[], time_t ts, FILE** file) {
 		}
 	}
 	fprintf(*file, "\n");
+	printf("\t\tOUTPUT: BEST THREE CHANGED!\n");
 }
 
 

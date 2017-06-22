@@ -12,6 +12,9 @@
 #include <stdlib.h>
 #include "output.h"
 
+//just to avoid calling map_size on posts (low efficiency)
+int posts_size;
+
 void delete_inactive_posts(map_t posts_to_delete, map_t posts) {
 
 	void *iterator = map_it_init(posts_to_delete);
@@ -19,7 +22,7 @@ void delete_inactive_posts(map_t posts_to_delete, map_t posts) {
 	post *p;
 	while(map_it_hasnext(posts_to_delete, iterator)){
 	        k = map_it_next(posts_to_delete, &iterator);
-	        printf("POST MANAGER: deleting post %ld ...\n", k);
+	        //printf("POST MANAGER: deleting post %ld ...\n", k);
 	        p = map_get(posts_to_delete, k);
 	        posts = map_remove(posts, k);
 	        post_delete(p);
@@ -35,6 +38,7 @@ void daily_decrement(map_t posts, long current_ts, post* best_three[], FILE** ou
     post *p;
     bool order_changed = false, is_daily_decrement = true;
     map_t posts_to_delete = map_init();
+    int posts_to_delete_size = 0;
 
     //MPI_Datatype MPI_out_tuple = serialize_out_tuple();
 
@@ -58,9 +62,9 @@ void daily_decrement(map_t posts, long current_ts, post* best_three[], FILE** ou
         if(delta != 0){
 
         	bool is_active;
-        	printf("POST MANAGER: post %ld is gonna be incremented by %d\n", p->post_id, delta);
+        	//printf("POST MANAGER: post %ld is gonna be incremented by %d\n", p->post_id, delta);
             is_active = post_update_score(p, delta, is_daily_decrement);
-            printf("POST MANAGER: post %ld is active? %d\n", p->post_id, is_active);
+            //printf("POST MANAGER: post %ld is active? %d\n", p->post_id, is_active);
             if(!is_active){
             	posts_to_delete = map_put(posts_to_delete, k, p);
             }
@@ -70,7 +74,9 @@ void daily_decrement(map_t posts, long current_ts, post* best_three[], FILE** ou
         	order_changed = true;
     }
     //delete of the inactive posts
-    printf("POST MANAGER: I have to delete %d posts\n", map_size(posts_to_delete));
+    posts_to_delete_size = map_size(posts_to_delete);
+    printf("POST MANAGER: I have to delete %d posts\n", posts_to_delete_size);
+    posts_size = posts_size - posts_to_delete_size;
     delete_inactive_posts(posts_to_delete, posts);
     //print the best 3
     if(order_changed) {
@@ -81,7 +87,7 @@ void daily_decrement(map_t posts, long current_ts, post* best_three[], FILE** ou
 
 
 
-void process_post (struct post *p, long current_ts, map_t *posts_to_delete, post* best_three[], bool *order_changed)
+void parallel_process_post (struct post *p, long current_ts, map_t *posts_to_delete, post* best_three[], bool *order_changed)
 {
 	long lifetime, num_of_dec, pod = PERIOD_OF_DECR;
 	int delta;
@@ -95,9 +101,9 @@ void process_post (struct post *p, long current_ts, map_t *posts_to_delete, post
 
 	bool is_active = true;
 	if(delta != 0){
-		printf("POST MANAGER: post %ld is gonna be incremented by %d\n", p->post_id, delta);
+		//printf("POST MANAGER: post %ld is gonna be incremented by %d\n", p->post_id, delta);
 		is_active = post_update_score(p, delta, true);
-		printf("POST MANAGER: post %ld is active? %d\n", p->post_id, is_active);
+		//printf("POST MANAGER: post %ld is active? %d\n", p->post_id, is_active);
 	}
 	#pragma omp critical
 	{
@@ -116,10 +122,10 @@ void parallel_daily_decrement(map_t posts, long current_ts, post* best_three[], 
     post *p;
     bool order_changed = false, is_daily_decrement = true;
     map_t posts_to_delete = map_init();
-    #pragma omp parallel shared (posts, order_changed, posts_to_delete) num_threads(4)
+    int posts_to_delete_size;
+    #pragma omp parallel shared (posts, order_changed, posts_to_delete) num_threads(NUM_OF_THREADS)
     {
         // one thread adds all tasks to the queue
-    	printf("Num of threads: %d\n", omp_get_num_threads());
         #pragma omp single
             while(map_it_hasnext(posts, iterator)){
                 k = map_it_next(posts, &iterator);
@@ -127,11 +133,13 @@ void parallel_daily_decrement(map_t posts, long current_ts, post* best_three[], 
                 #pragma omp task firstprivate (p)
                     // task is inserted in the queue and an available
                     // thread will execute it
-                    process_post(p, current_ts, &posts_to_delete, best_three, &order_changed);
+                    parallel_process_post(p, current_ts, &posts_to_delete, best_three, &order_changed);
             }
     }
     //delete of the inactive posts
-	printf("POST MANAGER: I have to delete %d posts\n", map_size(posts_to_delete));
+    posts_to_delete_size = map_size(posts_to_delete);
+	printf("POST MANAGER: I have to delete %d posts\n", posts_to_delete_size);
+	posts_size = posts_size - posts_to_delete_size;
 	delete_inactive_posts(posts_to_delete, posts);
 	//print the best 3
 	if(order_changed) {
@@ -149,6 +157,7 @@ void post_manager_run(char *path){
     post *best_three[NUM_OF_BEST] = {NULL, NULL, NULL};
     post_increment pi;
 
+    posts_size = 0;
 
     FILE *input, *output;
     if(path[0]!='\0')
@@ -168,9 +177,10 @@ void post_manager_run(char *path){
 	}
 
     while(p = parser_next_post(&input)) {
-    	printf("POST_MANAGER: Post read: %ld, %ld\n", p->post_id, p->ts);
+    	//printf("POST_MANAGER: Post read: %ld, %ld\n", p->post_id, p->ts);
         posts = map_put(posts, p->post_id, p);
-        printf("POST_MANAGER: Map size= %d\n", map_size(posts));
+        posts_size++;
+        printf("POST_MANAGER: Map size= %d\n", posts_size);
         // TODO: SSsend or Send? Blocking
         // Send timestamp of latest post
         MPI_Send(&(p->ts), 1, MPI_LONG, MASTER, GENERIC_TAG, MPI_COMM_WORLD);
@@ -205,19 +215,20 @@ void post_manager_run(char *path){
                 bool is_active = post_update_score(post, pi.increment, false);
                 if(!is_active){
                     posts = map_remove(posts, pi.post_id);
+                    posts_size--;
                     post_delete(post);
                 }
 
             }
             // Update score of posts (24h decrement) and the best three
-            daily_decrement(posts, current_tr.ts, best_three, &output);
+            parallel_daily_decrement(posts, current_tr.ts, best_three, &output);
 
             //read next timestamp
             MPI_Bcast(&current_tr, 1, MPI_LONG_INT, MASTER, MPI_COMM_WORLD);
 
 
         }
-        daily_decrement(posts, current_tr.ts, best_three, &output);
+        parallel_daily_decrement(posts, current_tr.ts, best_three, &output);
     }
     fclose(input);
     printf("POST_MANAGER: Sending stop to master\n");

@@ -37,7 +37,7 @@ void post_delete(post* post)
 	if(post->user == NULL) {
 	    	printf("POST: ***************NULL USER***************************************************************\n");
 	}
-	printf("POST: deleting %s # %s\n", post->content, post->user);
+	//printf("POST: deleting %s # %s\n", post->content, post->user);
     free(post->user);
     if(post->content == NULL) {
         	printf("POST: ***************NULL CONTENT ***************************************************************\n");
@@ -73,7 +73,7 @@ bool post_update_score(post* p, int delta, bool is_daily_decrement){
 
 void post_add_comments_info(post* post, long user_id, time_t last_comment_ts){
 	if(user_id != post->user_id) {
-		map_put(post->commenters, user_id, NULL);
+		post->commenters = map_put(post->commenters, user_id, NULL);
 	}
     post->last_comment_ts = last_comment_ts;
 }

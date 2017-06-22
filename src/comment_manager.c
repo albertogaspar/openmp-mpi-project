@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <omp.h>
 #include "mpi.h"
 #include "map.h"
 #include "map_iterator.h"
@@ -10,6 +11,8 @@
 #include "comment.h"
 #include "parser.h"
 
+
+int comments_size;
 /*
  * Set commented_post field to the real post id, if c is a reply to another comment
  * the value is retrieved from the parent comment which is always up to date
@@ -28,14 +31,14 @@ void delete_inactive_comments(map_t comments_to_delete, map_t comments) {
 	comment *c;
 	while(map_it_hasnext(comments_to_delete, iterator)){
 	        k = map_it_next(comments_to_delete, &iterator);
-	        printf("COMMENT MANAGER: deleting comment %ld ...\n", k);
+	        //printf("COMMENT MANAGER: deleting comment %ld ...\n", k);
 	        c = map_get(comments_to_delete, k);
 	        comments = map_remove(comments, k);
 	        comment_delete(c);
 	        printf("COMMENT MANAGER: comment %ld deleted\n", k);
 	}
 	comments_to_delete = map_empty(comments_to_delete);
-	printf("COMMENT MANAGER: delete completed\n");
+	//printf("COMMENT MANAGER: delete completed\n");
 
 }
 
@@ -44,6 +47,7 @@ void comment_daily_decrement(map_t comments, map_t posts_to_update,long current_
     long k;
     comment *c;
     map_t comments_to_delete = map_init();
+    int comments_to_delete_size = 0;
 
     printf("COMMENT MANAGER: daily decrement started\n");
     while(map_it_hasnext(comments, iterator)){
@@ -86,7 +90,77 @@ void comment_daily_decrement(map_t comments, map_t posts_to_update,long current_
         }
     }
     //delete of the inactive posts
-    printf("COMMENT MANAGER: I have to delete %d comments\n", map_size(comments_to_delete));
+    comments_to_delete_size = map_size(comments_to_delete);
+    printf("COMMENT MANAGER: I have to delete %d comments\n", comments_to_delete_size);
+    comments_size = comments_size - comments_to_delete_size;
+    delete_inactive_comments(comments_to_delete, comments);
+}
+
+void parallel_process_comment(comment *c, long current_ts, map_t *comments_to_delete, map_t *posts_to_update) {
+	long lifetime, num_of_dec, pod = PERIOD_OF_DECR;
+	int delta;
+
+	//time elapsed since last decrementation
+	lifetime = current_ts - c->ts;
+	//correct number of decrementation
+	num_of_dec = lifetime / pod;
+	//num of points to be subtracted to the score
+	delta = (int) (num_of_dec - c->num_of_dec) * (-1);
+
+	if(delta != 0){
+		long post_id;
+		post_increment *pi;
+		bool is_active = comment_update_score(c, delta, false);
+		post_id = c->commented_post;
+		#pragma omp critical
+		{
+			pi = map_get(*posts_to_update, post_id);
+			//if the post is not in the list, it means that it is the first time that
+			//an increment is recorded for the post
+			if( pi == NULL ) {
+				pi = (post_increment*) malloc(sizeof(post_increment));
+				pi->post_id = post_id;
+				pi->increment = delta;
+				*posts_to_update = map_put(*posts_to_update, post_id, pi);
+			}
+			//the post is already recorded in the list, so we update the increment with
+			//the one of the current comment
+			else {
+				pi->increment = pi->increment + delta;
+			}
+
+			if(!is_active){
+				*comments_to_delete = map_put(*comments_to_delete, c->comment_id, c);
+			}
+		}
+	}
+}
+
+void comment_parallel_daily_decrement(map_t comments, map_t posts_to_update, long current_ts) {
+	void *iterator = map_it_init(comments);
+	long k;
+	comment *c;
+	map_t comments_to_delete = map_init();
+	int comments_to_delete_size = 0;
+	printf("COMMENT MANAGER: daily decrement started\n");
+    #pragma omp parallel shared (comments, posts_to_update, comments_to_delete) num_threads(NUM_OF_THREADS)
+    {
+        // one thread adds all tasks to the queue
+		//printf("COMMENT_MANAGER: Num of threads is %d\n", omp_get_num_threads());
+        #pragma omp single
+            while(map_it_hasnext(comments, iterator)){
+                k = map_it_next(comments, &iterator);
+                c = map_get(comments, k);
+                #pragma omp task firstprivate (c)
+                    // task is inserted in the queue and an available
+                    // thread will execute it
+                    parallel_process_comment(c, current_ts, &comments_to_delete, &posts_to_update);
+            }
+    }
+    //delete of the inactive comments
+    comments_to_delete_size = map_size(comments_to_delete);
+    printf("COMMENT MANAGER: I have to delete %d comments\n", comments_to_delete_size);
+    comments_size = comments_size - comments_to_delete_size;
     delete_inactive_comments(comments_to_delete, comments);
 }
 
@@ -101,6 +175,7 @@ void comment_manager_run(char *path){
     map_t posts_to_update = map_init();
     struct comment* c = NULL;
     post_increment pi;
+    comments_size = 0;
 
     FILE *file;
     if(path[0]!='\0')
@@ -116,12 +191,13 @@ void comment_manager_run(char *path){
     while(c = parser_next_comment(&file)) {
 
     	//get the commented post
-    	printf("COMMENT_MANAGER: Comment read: %ld\n", c->comment_id);
+    	//printf("COMMENT_MANAGER: Comment read: %ld\n", c->comment_id);
     	set_commented_post(comments, c);
 
     	//save new comment in the comments map
         comments = map_put(comments, c->comment_id, c);
-        printf("COMMENT_MANAGER: Comments size = %d\n", map_size(comments));
+        comments_size++;
+        printf("COMMENT_MANAGER: Comments size = %d\n", comments_size);
         // Send timestamp of latest post
         MPI_Send(&(c->ts), 1, MPI_LONG, MASTER, GENERIC_TAG, MPI_COMM_WORLD);
         // Receive current timestamp from master
@@ -138,7 +214,7 @@ void comment_manager_run(char *path){
 		void *iterator;
 		long post_id;
 		//calculate 24H decrements and fill posts_to_update list
-		comment_daily_decrement(comments, posts_to_update, current_tr.ts);
+		comment_parallel_daily_decrement(comments, posts_to_update, current_tr.ts);
 
 		// Send number of posts that need to be updated
 		count = map_size(posts_to_update) + 1;

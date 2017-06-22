@@ -35,7 +35,7 @@ time_t parse_ts(char* date)
 	struct tm mytm;
 	time_t t;
 	int millisec;
-    printf("PARSER: ts read: %s\n", date);
+    //printf("PARSER: ts read: %s\n", date);
     char* tokens = strsep(&date, ".");
 
     strptime(tokens,"%Y-%m-%dT%H:%M:%S",&mytm);
@@ -47,7 +47,7 @@ time_t parse_ts(char* date)
     millisec = atoi(tokens);
 
     t = t*1000 + millisec;
-    printf("PARSER: t=%ld\n",t);
+    //printf("PARSER: t=%ld\n",t);
     return t;
 }
 
@@ -74,9 +74,9 @@ struct comment* parse_comment(char* line){
     strcpy(user, us);
 
     long comment_replied = strtol_def(strsep(&line, SPLITTER), -1);
-    printf("PARSER: Comment replied = %ld\n", comment_replied);
+    //printf("PARSER: Comment replied = %ld\n", comment_replied);
     long commented_post = strtol_def(strsep(&line, "\n"), -1);
-    printf("PARSER: Commented post = %ld\n", commented_post);
+    //printf("PARSER: Commented post = %ld\n", commented_post);
 
 
     return comment_create(ts, comment_id, user_id, content, user, comment_replied, commented_post);
@@ -108,12 +108,12 @@ struct post* parse_post(char* line){
     char* p = strsep(&line, SPLITTER);
     char* content = (char*) malloc((strlen(p)+1)*sizeof(char));
     strcpy(content, p);
-    printf("PARSER: content = %s\n", content);
+    //printf("PARSER: content = %s\n", content);
 
     char* us = strsep(&line, "\n");
     char* user = (char*) malloc((strlen(us)+1)*sizeof(char));
     strcpy(user, us);
-    printf("PARSER: user = %s\n", user);
+    //printf("PARSER: user = %s\n", user);
 
     return post_create(ts, post_id, user_id, content, user);
 }
