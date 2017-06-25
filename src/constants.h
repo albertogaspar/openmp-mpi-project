@@ -14,7 +14,7 @@
 
 #define COMMENTS_FILE "resources/comments.dat"
 #define POSTS_FILE "resources/posts-tiny.dat"
-#define OUTPUT_FILE "resources/output.dat"
+#define OUTPUT_FILE "/home/hduser/Scrivania/output.dat"
 
 static const time_t default_time = 1230728833;
 static const char default_format[] = "%Y-%m-%dT%H:%M:%S";

@@ -6,6 +6,7 @@
 //#include "out_manager.h"
 #include "constants.h"
 #include "types.h"
+#include <unistd.h>
 
 void master_run(){
 	MPI_Status stat;
@@ -69,8 +70,9 @@ void master_run(){
 
 int main(int argc, char* argv[]){
     process_t rank;
-    int size;
+    int size,len;
     char comment_file[100] = "", post_file[100] = "";
+    char name[MPI_MAX_PROCESSOR_NAME];
 
     if(argc>=2){
     	strcpy(post_file, argv[1]);
@@ -83,13 +85,22 @@ int main(int argc, char* argv[]){
     switch (rank)
     {
         case MASTER:
+		MPI_Get_processor_name(name, &len);
+		printf("MASTER: I am running on processor %s\n", name);
+		sleep(5);
         	master_run();
             break;
         case POST_MANAGER:
-            post_manager_run(post_file);
+	    MPI_Get_processor_name(name, &len);
+	    printf("POST_MANAGER: I am running on processor %s\n", name);
+            sleep(5);
+	    post_manager_run(post_file);
             break;
         case COMMENT_MANAGER:
-        	comment_manager_run(comment_file);
+	    MPI_Get_processor_name(name, &len);
+	    printf("COMMENT_MANAGER: I am running on processor %s\n", name);
+	    sleep(2);
+            comment_manager_run(comment_file);
             break;
         default:
             printf("Rank error! I'm the process with rank %d\n", rank);
